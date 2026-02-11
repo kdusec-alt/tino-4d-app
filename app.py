@@ -19,14 +19,14 @@ if 'screenshot_mode' not in st.session_state:
 if 'last_result' not in st.session_state:
     st.session_state['last_result'] = None
 
-# --- CSS: 修復渲染 BUG + 打造擬真拉桿 ---
+# --- CSS: 修正樣式與渲染 ---
 st.markdown("""
     <style>
     /* 全局設定 */
     .stApp { background-color: #000; color: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
     .block-container { padding-top: 1rem; padding-bottom: 5rem; max-width: 500px; }
 
-    /* === 拉霸機外殼 (The Machine Casing) === */
+    /* === 拉霸機外殼 === */
     .slot-machine-casing {
         background: linear-gradient(135deg, #222 0%, #0d0d0d 100%);
         border: 6px solid #ffd700;
@@ -52,7 +52,7 @@ st.markdown("""
         text-shadow: 0 0 10px #ff0000; margin: 0; font-style: italic;
     }
 
-    /* === 捲軸視窗 (The Reels) === */
+    /* === 捲軸視窗 === */
     .reel-window {
         background: #000;
         border: 2px solid #444;
@@ -96,45 +96,32 @@ st.markdown("""
         text-align: center; margin-top: 5px;
     }
 
-    /* === 擬真拉桿按鈕 (The Lever Knob) === */
+    /* === 擬真拉桿按鈕 (修復渲染問題) === */
     div.stButton > button {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%; /* 變成圓球 */
-        background: radial-gradient(circle at 30% 30%, #ff4444, #990000);
-        border: 4px solid #cc0000;
+        width: 100px !important;
+        height: 100px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle at 30% 30%, #ff4444, #990000) !important;
+        border: 4px solid #cc0000 !important;
         box-shadow: 
-            0 10px 0 #550000, /* 側面厚度 */
-            0 20px 20px rgba(0,0,0,0.6), /* 陰影 */
-            inset 0 0 20px rgba(0,0,0,0.5);
-        color: white;
-        font-weight: bold;
-        font-size: 1.2em;
-        margin: 0 auto; /* 置中 */
-        display: block;
-        transition: all 0.1s;
-        position: relative;
-        z-index: 10;
+            0 10px 0 #550000, 
+            0 20px 20px rgba(0,0,0,0.6), 
+            inset 0 0 20px rgba(0,0,0,0.5) !important;
+        color: white !important;
+        font-weight: bold !important;
+        font-size: 1.2em !important;
+        margin: 0 auto !important;
+        display: block !important;
+        position: relative !important;
+        z-index: 10 !important;
     }
-    
-    /* 按下效果 */
     div.stButton > button:active {
-        transform: translateY(10px); /* 向下壓 */
-        box-shadow: 
-            0 0 0 #550000, 
-            0 0 10px rgba(0,0,0,0.6),
-            inset 0 0 20px rgba(0,0,0,0.8);
+        transform: translateY(10px) !important;
+        box-shadow: 0 0 0 #550000, inset 0 0 20px rgba(0,0,0,0.8) !important;
     }
-    
-    /* 拉桿的「桿子」部分 (視覺裝飾) */
-    div.stButton::after {
-        content: "PULL";
-        display: block;
-        text-align: center;
-        color: #555;
-        font-size: 0.8em;
-        margin-top: 15px;
-        font-weight: bold;
+    div.stButton > button p {
+        font-size: 1.2em !important;
+        font-weight: bold !important;
     }
 
     /* 儀表板 */
@@ -146,12 +133,11 @@ st.markdown("""
     .status-txt { color: #fff; font-size: 0.9em; }
     .status-highlight { color: #00e5ff; font-weight: bold; margin-left: 5px;}
     
-    /* 隱藏預設 */
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. 核心邏輯 (V10.2) ---
+# --- 2. 核心邏輯 ---
 def get_zodiac(year):
     zodiacs = ["🐵", "🐔", "🐶", "🐷", "🐭", "🐮", "🐯", "🐰", "🐲", "🐍", "🐴", "🐑"]
     return zodiacs[year % 12]
@@ -178,7 +164,6 @@ def calculate_dynamic_seed(name, birth_date):
     seed_val = int(hashlib.sha256(raw_str.encode('utf-8')).hexdigest(), 16)
     return seed_val
 
-# Smart Filter
 def check_filters(numbers):
     birthday_nums = sum(1 for n in numbers if n <= 31)
     if birthday_nums > 4: return False
@@ -201,8 +186,7 @@ def generate_rational_numbers(lucky_digits, seed):
         remaining_pool = [n for n in range(1, 50) if n not in layer1_nums]
         layer2_nums = random.sample(remaining_pool, 4)
         final_set = layer1_nums + layer2_nums
-        if check_filters(final_set):
-            return sorted(final_set)
+        if check_filters(final_set): return sorted(final_set)
     return sorted(final_set)
 
 def run_simulation(name, birth_date, audit_list):
@@ -211,17 +195,14 @@ def run_simulation(name, birth_date, audit_list):
     constellation = get_constellation(birth_date.month, birth_date.day)
     dynamic_seed = calculate_dynamic_seed(name, birth_date)
     
-    # 大樂透
     l_main = generate_rational_numbers(lucky_digits, dynamic_seed)
     random.seed(dynamic_seed + 1)
     l_spec = random.choice([x for x in range(1, 50) if x not in l_main])
     
-    # 威力彩
     random.seed(dynamic_seed + 10)
     s_main = sorted(random.sample(range(1, 39), 6))
     s_spec = random.randint(1, 8)
     
-    # 刮刮樂
     random.seed(dynamic_seed + 2)
     base_tails = lucky_digits[:2]
     dynamic_tail = (dynamic_seed % 10)
@@ -232,7 +213,6 @@ def run_simulation(name, birth_date, audit_list):
     final_tails = final_tails[:3]
     random.shuffle(final_tails)
     
-    # 雷達圖
     elements = ['金', '木', '水', '火', '土']
     random.seed(dynamic_seed)
     r_values = [random.randint(30, 60) for _ in range(5)]
@@ -246,7 +226,6 @@ def run_simulation(name, birth_date, audit_list):
         'r_labels': elements, 'r_values': r_values
     }
 
-# 修正：確保回傳的是純字串 HTML
 def render_balls(numbers, special=None):
     html = '<div class="ball-container">'
     for n in numbers:
@@ -257,7 +236,6 @@ def render_balls(numbers, special=None):
     return html
 
 # --- 3. App 介面 ---
-
 with st.sidebar:
     st.header("⚙️")
     audit_txt = st.text_input("排除號碼", "")
@@ -272,10 +250,9 @@ if not st.session_state['screenshot_mode']:
 
     st.write("") 
     
-    # 拉桿按鈕 (置中顯示)
     col_x, col_btn, col_y = st.columns([1, 1, 1])
     with col_btn:
-        spin_btn = st.button("SPIN") # 顯示文字為 SPIN
+        spin_btn = st.button("SPIN") # 拉桿按鈕
 
     if spin_btn:
         if not u_name:
@@ -283,21 +260,18 @@ if not st.session_state['screenshot_mode']:
         else:
             if u_dob > date.today():
                 st.toast("🛸 來自未來的訊號...", icon="👽")
-                time.sleep(1)
             
             st.session_state['u_name'] = u_name
-            
             placeholder = st.empty()
             
-            # 動畫 (確保使用 unsafe_allow_html=True)
-            for i in range(6): 
+            for i in range(5): 
                 fake_l = sorted(random.sample(range(1, 50), 6))
                 fake_ls = random.randint(1, 49)
                 fake_s = sorted(random.sample(range(1, 39), 6))
                 fake_ss = random.randint(1, 8)
                 fake_scratch = random.sample(range(0, 10), 3)
                 
-                # 這裡修復了 Bug：確保所有 f-string 都正確閉合，且 HTML 結構完整
+                # 動畫區塊：確認使用 unsafe_allow_html=True
                 placeholder.markdown(f"""
                 <div class="slot-machine-casing">
                     <div class="machine-top"><h1 class="machine-title">SPINNING...</h1></div>
@@ -318,19 +292,19 @@ if not st.session_state['screenshot_mode']:
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                time.sleep(0.1)
+                time.sleep(0.08)
             
             placeholder.empty()
             result = run_simulation(u_name, u_dob, audit_list if 'audit_list' in locals() else [])
             st.session_state['last_result'] = result
 
-# --- 結果顯示區 (修復版) ---
+# --- 結果顯示區 (重點修正) ---
 if st.session_state['last_result']:
     res = st.session_state['last_result']
     t = res['t']
     
-    # 這裡就是關鍵修復：確保 unsafe_allow_html=True
-    st.markdown(f"""
+    # 建立 HTML 字串
+    html_content = f"""
     <div class="slot-machine-casing">
         <div class="machine-top">
             <h1 class="machine-title">TINO LUCKY BALL</h1>
@@ -359,7 +333,10 @@ if st.session_state['last_result']:
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    
+    # 渲染 HTML (這裡最關鍵，一定要有 unsafe_allow_html=True)
+    st.markdown(html_content, unsafe_allow_html=True)
     
     with st.expander("📊 能量分析", expanded=False):
         r_vals = res['r_values'] + [res['r_values'][0]]
