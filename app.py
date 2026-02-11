@@ -1,192 +1,224 @@
-# 🚀 TINO Cosmic Destiny Engine V14
-# 五行 × 紫微敘事 × 今日偏財雷達 × 公平隨機模型
-
 import streamlit as st
 import random
 import hashlib
 from datetime import datetime, date
-import math
+import time
+import plotly.graph_objects as go
 
-# ==========================================
-# 🎨 頁面設定（真正響應式）
-# ==========================================
+# --- 1. 頁面設定 ---
+st.set_page_config(
+    page_title="Tino Slot Machine",
+    page_icon="🎰",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
-st.set_page_config(page_title="TINO Cosmic Engine", layout="centered")
+# Session State
+if 'screenshot_mode' not in st.session_state:
+    st.session_state['screenshot_mode'] = False
+if 'last_result' not in st.session_state:
+    st.session_state['last_result'] = None
+if 'u_name' not in st.session_state:
+    st.session_state['u_name'] = ""
+if 'u_dob' not in st.session_state:
+    st.session_state['u_dob'] = date(2000,1,1)
 
+# ---------------- CSS 響應式完整版 ----------------
 st.markdown("""
 <style>
-.block-container {
-    padding-top: 1rem;
-    padding-bottom: 4rem;
-    max-width: 900px;
+.stApp { background-color:#000; color:#f0f0f0; font-family:-apple-system,BlinkMacSystemFont,sans-serif;}
+.block-container { padding-top:1rem; padding-bottom:5rem; max-width:500px;}
+@media (max-width:900px){ .block-container{max-width:95%;}}
+@media (max-width:480px){
+  .block-container{max-width:100%!important;padding-left:0.5rem;padding-right:0.5rem;}
+  .ball{min-width:28px!important;width:28px!important;height:28px!important;font-size:13px!important;border-width:1px!important;}
+  div.stButton>button{width:80px!important;height:80px!important;}
 }
-@media only screen and (max-width: 900px) {
-    .block-container { max-width: 700px; }
+
+.slot-machine-casing{
+ background:linear-gradient(135deg,#222 0%,#0d0d0d 100%);
+ border:6px solid #ffd700;
+ border-radius:20px;
+ padding:15px;
+ box-shadow:0 0 20px rgba(255,215,0,0.2), inset 0 0 40px #000;
+ margin-bottom:20px;
 }
-@media only screen and (max-width: 480px) {
-    .block-container {
-        max-width: 100% !important;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-    }
+.machine-top{
+ text-align:center;
+ background:#4a0000;
+ border-radius:12px;
+ padding:8px;
+ margin-bottom:15px;
+ border:2px solid #ff3333;
+ box-shadow:0 0 10px #ff0000;
+}
+.machine-title{
+ color:#ffeb3b;
+ font-weight:900;
+ font-size:1.4em;
+ letter-spacing:2px;
+}
+.reel-window{
+ background:#000;
+ border:2px solid #444;
+ border-radius:10px;
+ margin-bottom:10px;
+ padding:8px 2px;
+}
+.reel-label{font-size:0.7em;color:#888;text-align:center;margin-bottom:4px;}
+.reel-label.main{color:#00e5ff;}
+.reel-label.super{color:#00ff00;}
+.reel-label.scratch{color:#ffd700;}
+
+.ball-container{display:flex;justify-content:center;gap:4px;flex-wrap:nowrap;}
+.ball{
+ min-width:34px;width:34px;height:34px;border-radius:50%;
+ background:radial-gradient(circle at 30% 30%,#fff,#bbb);
+ color:#000;font-weight:900;font-size:15px;
+ display:flex;align-items:center;justify-content:center;
+ border:2px solid #000;
+}
+.ball.special{
+ background:radial-gradient(circle at 30% 30%,#ff3333,#990000);
+ color:white;
+}
+
+.scratch-num{
+ font-size:1.6em;font-weight:900;color:#ffd700;text-align:center;
+}
+
+div.stButton>button{
+ width:90px!important;height:90px!important;
+ border-radius:50%!important;
+ background:radial-gradient(circle at 30% 30%,#ff4444,#990000)!important;
+ border:4px solid #cc0000!important;
+ box-shadow:0 8px 0 #550000;
+ color:white!important;font-weight:bold!important;
+}
+
+.status-bar{
+ display:flex;justify-content:space-between;
+ background:#111;border-radius:8px;padding:6px 10px;margin-bottom:10px;
+}
+.status-highlight{color:#00e5ff;font-weight:bold;}
+
+.radar-box{
+ background:#111;
+ border-radius:6px;
+ padding:6px;
+ margin-top:8px;
+ font-size:0.85em;
+ border:1px solid #333;
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🌌 TINO Cosmic Destiny Engine")
-st.caption("五行 × 紫微敘事 × 今日偏財雷達")
+# ---------------- 原本核心邏輯 ----------------
+def get_element_luck(year):
+    last_digit=int(str(year)[-1])
+    if last_digit in [0,1]: return "金",[4,9,0,5]
+    if last_digit in [2,3]: return "水",[1,6,4,9]
+    if last_digit in [4,5]: return "木",[3,8,1,6]
+    if last_digit in [6,7]: return "火",[2,7,3,8]
+    if last_digit in [8,9]: return "土",[5,0,2,7]
+    return "未知",[]
 
-# ==========================================
-# 🧬 五行判定
-# ==========================================
+def calculate_seed(name,dob):
+    raw=f"{name}_{dob}_{datetime.now()}"
+    return int(hashlib.sha256(raw.encode()).hexdigest(),16)
 
-def get_element(year):
-    last = year % 10
-    if last in [0,1]:
-        return "金"
-    elif last in [2,3]:
-        return "水"
-    elif last in [4,5]:
-        return "木"
-    elif last in [6,7]:
-        return "火"
-    else:
-        return "土"
-
-element_tail = {
-    "金":[4,9],
-    "木":[3,8],
-    "水":[1,6],
-    "火":[2,7],
-    "土":[0,5]
-}
-
-# ==========================================
-# 🌠 今日偏財雷達
-# ==========================================
-
-def wealth_radar_score(name, birth):
-    today = datetime.now().strftime("%Y%m%d")
-    raw = name + str(birth) + today
-    h = int(hashlib.sha256(raw.encode()).hexdigest(), 16)
-    score = (h % 100) + 1   # 1~100
-
-    if score > 80:
-        level = "🔥 偏財高波動區"
-    elif score > 60:
-        level = "⚡ 偏財活躍區"
-    elif score > 40:
-        level = "🌊 平穩機率區"
-    else:
-        level = "🪨 建議娛樂小額"
-
-    return score, level
-
-# ==========================================
-# 🔮 紫微敘事層
-# ==========================================
-
-def generate_story(name, element, seed):
+def generate_numbers(seed):
     random.seed(seed)
+    main=sorted(random.sample(range(1,50),6))
+    spec=random.randint(1,49)
+    return main,spec
 
-    stars = [
-        "紫微入命，主星微動",
-        "破軍震盪，偏財翻湧",
-        "武曲守財，金流匯聚",
-        "天府照耀，資源浮現",
-        "貪狼流轉，機會啟動"
-    ]
+def render_balls(numbers,special=None):
+    html='<div class="ball-container">'
+    for n in numbers:
+        html+=f'<div class="ball">{n:02d}</div>'
+    if special:
+        html+=f'<div class="ball special">{special:02d}</div>'
+    html+='</div>'
+    return html
 
-    quantum = [
-        "量子場正在重組",
-        "平行宇宙微幅偏移",
-        "機率雲產生坍縮",
-        "時間軸出現共振",
-        "未來財富態正在疊加"
-    ]
+# ---------------- 偏財雷達 ----------------
+def wealth_radar(name,dob):
+    today=datetime.now().strftime("%Y%m%d")
+    seed=int(hashlib.sha256(f"{name}_{dob}_{today}".encode()).hexdigest(),16)
+    score=seed%100+1
+    if score>80: level="🔥 偏財高波動區"
+    elif score>60: level="⚡ 偏財活躍區"
+    elif score>40: level="🌊 平穩娛樂區"
+    else: level="🪨 建議小額娛樂"
+    return score,level
 
+# ---------------- 豪華宇宙敘事 ----------------
+def cosmic_story(name,elem,seed):
+    random.seed(seed)
+    stars=["紫微震動","破軍翻湧","武曲聚財","天府開庫","貪狼啟動"]
+    quantum=["量子場重組","機率雲坍縮","平行宇宙共振","時間軸偏移","財富態疊加"]
     return f"""
-    🌠 宇宙報告
+🌌 宇宙敘事報告
 
-    玩家：{name}
-    本命五行：{element}
+玩家：{name}
+五行核心：{elem}
+星曜狀態：{random.choice(stars)}
+量子動態：{random.choice(quantum)}
 
-    ✦ 星曜動態：
-    {random.choice(stars)}
+今日建議：保持娛樂心態，讓宇宙隨機演化。
+"""
 
-    ✦ 量子狀態：
-    {random.choice(quantum)}
+# ---------------- UI ----------------
+col1,col2=st.columns(2)
+with col1:
+    u_name=st.text_input("玩家姓名")
+with col2:
+    u_dob=st.date_input("玩家生日",value=date(2000,1,1))
 
-    ※ 本結果屬隨機宇宙演化的一部分
-    """
+spin=st.button("SPIN")
 
-# ==========================================
-# 🎲 核心號碼生成（保持公平）
-# ==========================================
+if spin and u_name:
+    st.session_state['u_name']=u_name
+    st.session_state['u_dob']=u_dob
+    seed=calculate_seed(u_name,u_dob)
+    elem,_=get_element_luck(u_dob.year)
+    l,ls=generate_numbers(seed)
+    st.session_state['last_result']={
+        "l":l,"ls":ls,"elem":elem,"seed":seed
+    }
 
-def generate_numbers(name, birth):
-
-    base_seed = int(hashlib.sha256(
-        (name + str(birth)).encode()
-    ).hexdigest(), 16) % (10**8)
-
-    random.seed(base_seed + int(datetime.now().timestamp()))
-
-    element = get_element(birth.year)
-    tails = element_tail[element]
-
-    numbers = set()
-
-    # 50% 五行尾數
-    while len(numbers) < 3:
-        n = random.randint(1,49)
-        if n % 10 in tails:
-            numbers.add(n)
-
-    # 50% 隨機
-    while len(numbers) < 6:
-        numbers.add(random.randint(1,49))
-
-    numbers = sorted(list(numbers))
-    special = random.choice([x for x in range(1,49) if x not in numbers])
-
-    story = generate_story(name, element, base_seed)
-
-    return numbers, special, story, element
-
-# ==========================================
-# 🧑 使用者輸入
-# ==========================================
-
-name = st.text_input("👤 姓名", value="鄭廷暘")
-birth = st.date_input("📅 出生日期", value=date(1983,7,15))
-
-if st.button("🚀 啟動宇宙演算"):
-
-    nums, spec, story, element = generate_numbers(name, birth)
-    score, level = wealth_radar_score(name, birth)
-
-    st.success("量子坍縮完成")
-
-    # 🎯 今日偏財雷達
-    st.markdown("## 📡 今日偏財雷達")
-    st.progress(score)
-    st.markdown(f"**能量指數：{score}/100**")
-    st.markdown(f"**狀態判定：{level}**")
-
-    st.markdown("---")
-
-    # 🎲 樂透組合
-    st.markdown("## 🔮 大樂透建議組合")
-    st.markdown(
-        f"<h2 style='text-align:center;'>"
-        f"{' '.join([f'{x:02d}' for x in nums])} "
-        f"<span style='color:red'>[{spec:02d}]</span>"
-        f"</h2>",
-        unsafe_allow_html=True
+# ---------------- 顯示 ----------------
+if st.session_state['last_result']:
+    res=st.session_state['last_result']
+    radar_score,radar_level=wealth_radar(
+        st.session_state['u_name'],
+        st.session_state['u_dob']
     )
 
-    with st.expander("🌌 宇宙敘事報告"):
-        st.markdown(story)
+    st.markdown(f"""
+<div class="slot-machine-casing">
+<div class="machine-top"><h1 class="machine-title">TINO COSMIC BALL</h1></div>
 
-    st.caption("⚠ 本系統為娛樂儀式引擎，號碼仍屬隨機機率。理性投注。")
+<div class="status-bar">
+<div>五行 <span class="status-highlight">{res['elem']}</span></div>
+<div>玩家 <span class="status-highlight">{st.session_state['u_name']}</span></div>
+</div>
+
+<div class="radar-box">
+📡 今日偏財雷達：<b>{radar_score}/100</b>　{radar_level}
+</div>
+
+<div class="reel-window">
+<div class="reel-label main">大樂透 LOTTO</div>
+{render_balls(res['l'],res['ls'])}
+</div>
+</div>
+""",unsafe_allow_html=True)
+
+    with st.expander("🌌 豪華宇宙敘事"):
+        st.write(cosmic_story(
+            st.session_state['u_name'],
+            res['elem'],
+            res['seed']
+        ))
