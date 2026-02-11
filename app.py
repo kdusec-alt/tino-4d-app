@@ -20,12 +20,25 @@ if 'last_result' not in st.session_state:
     st.session_state['last_result'] = None
 
 # ==========================================
-# CSS 樣式
+# CSS（已包含你想要的風格）
 # ==========================================
 st.markdown("""
 <style>
 .stApp { background-color: #000; color: #f0f0f0; font-family: sans-serif; }
 .block-container { padding-top: 1rem !important; padding-bottom: 5rem !important; max-width: 540px !important; }
+
+/* 日期時間區 */
+.today-info {
+    text-align: center;
+    color: #ffcc00;
+    font-size: 1.05em;
+    font-weight: bold;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: rgba(255, 204, 0, 0.1);
+    border-radius: 8px;
+    border: 1px solid #ffcc0066;
+}
 
 /* 命理戰報卡片 */
 .fate-card {
@@ -38,31 +51,46 @@ st.markdown("""
 }
 .fate-header {
     color: #ffd700;
-    font-size: 1.15em;
+    font-size: 1.2em;
     font-weight: bold;
     border-bottom: 1px solid #444;
-    padding-bottom: 6px;
-    margin-bottom: 10px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
 }
 .fate-content {
-    font-size: 0.92em;
+    font-size: 0.95em;
     line-height: 1.6;
-    color: #ddd;
+    color: #eee;
 }
 .highlight {
     color: #00e5ff;
     font-weight: bold;
 }
-.today-info {
-    text-align: center;
-    color: #ffcc00;
-    font-size: 1.05em;
-    font-weight: bold;
-    margin-bottom: 12px;
-    padding: 6px;
-    background: rgba(255, 204, 0, 0.08);
-    border-radius: 6px;
+
+/* 主星專屬美化 */
+.main-star-box {
+    margin: 12px 0;
+    padding: 12px;
+    background: rgba(255, 215, 0, 0.08);
     border: 1px solid #ffcc0066;
+    border-radius: 8px;
+}
+.main-star-title {
+    color: #00e5ff;
+    font-size: 1.15em;
+    margin-bottom: 6px;
+}
+.main-star-name {
+    color: #ffeb3b;
+    font-size: 1.5em;
+    font-weight: bold;
+    letter-spacing: 1px;
+    display: block;
+    margin: 6px 0;
+}
+.main-star-desc {
+    color: #ffcc99;
+    font-size: 1.05em;
 }
 
 /* 拉霸機外殼 */
@@ -159,7 +187,6 @@ div.stButton > button {
     .ball-row { gap: 3px; padding: 3px 0; }
     .machine-title { font-size: 1.5em; }
     .scratch-text { font-size: 1.7em; letter-spacing: 4px; }
-    .fate-card { padding: 12px; }
     .today-info { font-size: 0.95em; }
 }
 
@@ -168,7 +195,7 @@ div.stButton > button {
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 核心邏輯函數（保持不變）
+# 核心邏輯函數（與你目前一致）
 # ==========================================
 def get_element_by_year(year):
     last = year % 10
@@ -289,14 +316,14 @@ if st.button("SPIN (啟動演算)", type="primary"):
             st.rerun()
 
 # ==========================================
-# 結果顯示（含日期時間 + 美化主星）
+# 最終結果顯示（已修乾淨）
 # ==========================================
 if st.session_state.get('last_result'):
     res = st.session_state['last_result']
     f = res['fate']
     name_display = res.get('name', '玩家')
 
-    # 取得當前日期與時間（含星期）
+    # 日期時間（含星期）
     now = datetime.now()
     weekdays = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
     today_str = now.strftime("%Y年%m月%d日")
@@ -304,36 +331,26 @@ if st.session_state.get('last_result'):
     time_str = now.strftime("%H:%M")
     datetime_display = f"{today_str}　{weekday_str}　{time_str}"
 
-    # 命理戰報 - 美化版 + 日期時間
-    fate_html = f"""
-<div class="fate-card">
-    <div class="today-info">
-        {datetime_display}
-    </div>
-    <div class="fate-header">🌌 今日運勢戰報 ({name_display})</div>
-    <div class="fate-content">
-        <div style="margin-bottom:12px;">
-            <span class="highlight">【先天命格】</span><br>
-            {f.get('ganzhi', '未知')}年，屬{f.get('elem', '未知')}
-        </div>
-        
-        <div style="margin-bottom:14px; padding:12px; background:rgba(255,215,0,0.08); border-radius:8px; border:1px solid #ffcc0066;">
-            <span class="highlight" style="font-size:1.15em;">【今日主星】</span><br>
-            <strong style="color:#ffeb3b; font-size:1.45em; letter-spacing:1.2px; display:block; margin:6px 0;">
-                {f['star'][0] if 'star' in f else '未知'}
-            </strong>
-            <span style="color:#ffcc99; font-size:1.05em; line-height:1.4;">
-                {f['star'][1] if 'star' in f else ''}
-            </span>
-        </div>
-        
-        <div>
-            <span class="highlight">【姓名靈動】</span><br>
-            {f.get('name_res', '無資料')}
-        </div>
-    </div>
+    # 命理戰報（乾淨、無縮排）
+    fate_html = f"""<div class="fate-card">
+<div class="today-info">{datetime_display}</div>
+<div class="fate-header">今日運勢戰報 ({name_display})</div>
+<div class="fate-content">
+<div style="margin-bottom:12px;">
+<span class="highlight">【先天命格】</span><br>
+{f.get('ganzhi', '未知')}年，屬{f.get('elem', '未知')}
 </div>
-"""
+<div class="main-star-box">
+<span class="main-star-title">【今日主星】</span><br>
+<strong class="main-star-name">{f['star'][0] if 'star' in f else '未知'}</strong>
+<span class="main-star-desc">{f['star'][1] if 'star' in f else ''}</span>
+</div>
+<div>
+<span class="highlight">【姓名靈動】</span><br>
+{f.get('name_res', '無資料')}
+</div>
+</div>
+</div>"""
 
     col_fate, col_radar = st.columns([1.35, 1])
     
@@ -352,11 +369,7 @@ if st.session_state.get('last_result'):
         fig.update_layout(
             polar=dict(
                 radialaxis=dict(visible=False, range=[0, 100]),
-                angularaxis=dict(
-                    tickfont=dict(size=11, color='#ddd'),
-                    rotation=90,
-                    direction='clockwise'
-                ),
+                angularaxis=dict(tickfont=dict(size=11, color='#ddd'), rotation=90, direction='clockwise'),
                 bgcolor='rgba(0,0,0,0)'
             ),
             paper_bgcolor='rgba(0,0,0,0)',
