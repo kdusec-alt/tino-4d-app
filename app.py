@@ -5,75 +5,96 @@ from datetime import datetime, date
 import time
 import plotly.graph_objects as go
 
-# --- 1. 頁面與 Cyberpunk 風格設定 ---
+# --- 1. 頁面與賭城風格設定 ---
 st.set_page_config(
-    page_title="Tino Lucky Ball", 
-    page_icon="🎱", 
+    page_title="Tino Lucky Slot", 
+    page_icon="🎰", 
     layout="centered"
 )
 
-# CSS 黑科技風格
+# CSS 賭城黑金風格
 st.markdown("""
     <style>
-    .stApp { background-color: #0e1117; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+    .stApp { background-color: #121212; color: #f0f0f0; font-family: 'Arial', sans-serif; }
     
-    /* 按鈕樣式 */
+    /* 拉霸機大按鈕 */
     .stButton>button { 
-        width: 100%; border-radius: 12px; height: 3.5em; 
-        background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%); 
-        color: white; font-size: 1.1em; font-weight: bold; border: none; letter-spacing: 1px;
-        box-shadow: 0 0 15px rgba(0, 114, 255, 0.4);
-        transition: all 0.3s ease;
+        width: 100%; border-radius: 50px; height: 4em; 
+        background: linear-gradient(180deg, #ff0000 0%, #990000 100%); 
+        color: white; font-size: 1.3em; font-weight: bold; border: 4px solid #ffcc00; 
+        box-shadow: 0 5px 0 #660000, 0 10px 10px rgba(0,0,0,0.5);
+        text-transform: uppercase; letter-spacing: 2px;
+        transition: all 0.1s;
+    }
+    .stButton>button:active {
+        transform: translateY(4px);
+        box-shadow: 0 1px 0 #660000, 0 2px 5px rgba(0,0,0,0.5);
     }
     .stButton>button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 0 25px rgba(0, 114, 255, 0.6);
+        background: linear-gradient(180deg, #ff3333 0%, #cc0000 100%);
+        border-color: #ffff00;
     }
 
-    /* 結果卡片 */
-    .result-box { 
-        background: #1f2937; padding: 20px; border-radius: 15px; 
-        margin-bottom: 20px; border-left: 6px solid; text-align: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    /* 數字球樣式 (Ball Style) */
+    .ball-container {
+        display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 15px 0;
     }
-    .lotto { border-color: #00e5ff; } 
-    .super { border-color: #00ff00; } 
-    .scratch { border-color: #ffd700; } 
-    
-    .title-text { font-size: 1.2em; font-weight: bold; margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 1px;}
-    .nums { font-size: 2em; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 2px; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
-    .spec { color: #ff4b4b; margin-left: 10px; font-size: 1.1em; }
-    
-    h1 { text-align: center; color: #00e5ff; text-shadow: 0 0 15px rgba(0, 229, 255, 0.6); margin-bottom: 0px;}
-    .subtitle { text-align: center; color: #888; font-size: 0.9em; margin-bottom: 30px; letter-spacing: 1.5px; }
-    
-    /* 狀態顯示區 */
+    .ball {
+        width: 50px; height: 50px; border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #ffffff, #e0e0e0, #a0a0a0);
+        color: #333; font-weight: bold; font-size: 22px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: inset -5px -5px 10px rgba(0,0,0,0.3), 3px 3px 5px rgba(0,0,0,0.5);
+        border: 2px solid #fff;
+        font-family: 'Courier New', monospace;
+    }
+    .ball.special {
+        background: radial-gradient(circle at 30% 30%, #ff4b4b, #cc0000);
+        color: white; border: 2px solid #ffaaaa;
+    }
+    .ball.blur {
+        filter: blur(2px);
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+
+    /* 儀表板與卡片 */
     .status-container {
-        display: flex; justify-content: space-around; background: #111;
-        border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 20px;
+        display: flex; justify-content: space-around; background: #000;
+        border: 2px solid #333; border-radius: 10px; padding: 10px; margin-bottom: 20px;
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
     }
-    .status-item { text-align: center; font-size: 0.9em; color: #aaa; }
-    .status-val { display: block; font-size: 1.2em; font-weight: bold; color: #00e5ff; margin-top: 5px;}
+    .status-item { text-align: center; font-size: 0.8em; color: #888; }
+    .status-val { display: block; font-size: 1.1em; font-weight: bold; color: #00e5ff; margin-top: 5px;}
+
+    .slot-frame {
+        background: #222; border: 4px solid #444; border-radius: 15px;
+        padding: 15px; margin-bottom: 20px; text-align: center;
+        box-shadow: inset 0 0 20px #000;
+        position: relative;
+    }
+    .slot-label {
+        background: #000; color: #ffd700; padding: 2px 10px; border-radius: 5px;
+        font-size: 0.9em; font-weight: bold; display: inline-block; margin-bottom: 10px;
+        border: 1px solid #ffd700; box-shadow: 0 0 5px #ffd700;
+    }
+    
+    /* 標題霓虹燈 */
+    h1 { text-align: center; color: #ffd700; text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; font-style: italic;}
+    .subtitle { text-align: center; color: #aaa; font-size: 0.8em; margin-bottom: 20px; letter-spacing: 2px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. TINO 五行與星宿邏輯 ---
-
+# --- 2. TINO 核心邏輯 (不變) ---
 def get_zodiac(year):
-    zodiacs = ["🐵 猴 (Monkey)", "🐔 雞 (Rooster)", "🐶 狗 (Dog)", "🐷 豬 (Pig)", 
-               "🐭 鼠 (Rat)", "🐮 牛 (Ox)", "🐯 虎 (Tiger)", "🐰 兔 (Rabbit)", 
-               "🐲 龍 (Dragon)", "🐍 蛇 (Snake)", "🐴 馬 (Horse)", "🐑 羊 (Goat)"]
+    zodiacs = ["🐵", "🐔", "🐶", "🐷", "🐭", "🐮", "🐯", "🐰", "🐲", "🐍", "🐴", "🐑"]
     return zodiacs[year % 12]
 
 def get_constellation(month, day):
     dates = (20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 22)
-    constellations = ["♑ 魔羯 (Cap)", "♒ 水瓶 (Aq)", "♓ 雙魚 (Pis)", "♈ 牡羊 (Ari)", 
-                      "♉ 金牛 (Tau)", "♊ 雙子 (Gem)", "♋ 巨蟹 (Can)", "♌ 獅子 (Leo)", 
-                      "♍ 處女 (Vir)", "♎ 天秤 (Lib)", "♏ 天蠍 (Sco)", "♐ 射手 (Sag)"]
-    if day < dates[month-1]:
-        return constellations[month-1]
-    else:
-        return constellations[month]
+    constellations = ["♑", "♒", "♓", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐"]
+    if day < dates[month-1]: return constellations[month-1]
+    else: return constellations[month]
 
 def get_element_luck(year):
     last_digit = int(str(year)[-1])
@@ -85,8 +106,8 @@ def get_element_luck(year):
     return "未知", []
 
 def calculate_dynamic_seed(name, birth_date):
-    # --- 關鍵修改：加入微秒 (microseconds) 讓每次按下都不同 ---
     now = datetime.now()
+    # 微秒級擾動，確保每次按都不一樣
     time_str = now.strftime("%Y%m%d%H%M%S%f") 
     raw_str = f"{name}_{birth_date}_{time_str}"
     seed_val = int(hashlib.sha256(raw_str.encode('utf-8')).hexdigest(), 16)
@@ -96,14 +117,12 @@ def calculate_element_distribution(main_element, seed):
     elements = ['金', '木', '水', '火', '土']
     random.seed(seed)
     values = [random.randint(40, 70) for _ in range(5)]
-    
     if main_element in elements:
         idx = elements.index(main_element)
         values[idx] = random.randint(90, 100)
         support_map = {'金': 4, '木': 2, '水': 0, '火': 1, '土': 3}
         support_idx = support_map[main_element]
         values[support_idx] += random.randint(10, 20)
-        
     return elements, values
 
 def run_simulation(name, birth_date, audit_list):
@@ -111,7 +130,6 @@ def run_simulation(name, birth_date, audit_list):
     zodiac = get_zodiac(birth_date.year)
     constellation = get_constellation(birth_date.month, birth_date.day)
     
-    # 使用動態 Seed
     dynamic_seed = calculate_dynamic_seed(name, birth_date)
     random.seed(dynamic_seed)
     
@@ -142,7 +160,6 @@ def run_simulation(name, birth_date, audit_list):
     s_spec = random.randint(1, 8)
     
     base_tails = lucky_digits[:2] 
-    # 動態刮刮樂
     dynamic_lucky = (dynamic_seed % 10)
     final_tails = list(set(base_tails + [dynamic_lucky]))
     while len(final_tails) < 3:
@@ -156,104 +173,135 @@ def run_simulation(name, birth_date, audit_list):
 
 # --- 3. App 介面佈局 ---
 
-st.markdown("<h1>🎱 Tino Lucky Ball</h1>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>QUANTUM RESONANCE | CORE V9.7</div>", unsafe_allow_html=True)
+st.markdown("<h1>🎰 TINO LUCKY JACKPOT</h1>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>V9.8 CASINO EDITION | PULL THE LEVER</div>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.header("🛡️ 系統校正")
-    audit_txt = st.text_input("輸入排除號碼 (逗號隔開)", "")
+    st.header("⚙️ 系統設定")
+    audit_txt = st.text_input("🚫 排除號碼 (逗號隔開)", "")
     audit_list = []
     if audit_txt:
-        try:
-            audit_list = [int(x.strip()) for x in audit_txt.split(",")]
-            st.success(f"⚠️ 已排除: {audit_list}")
+        try: audit_list = [int(x.strip()) for x in audit_txt.split(",")]
         except: pass
 
 col1, col2 = st.columns(2)
 with col1:
-    u_name = st.text_input("👤 姓名 (Name)", value="", placeholder="請輸入姓名")
+    u_name = st.text_input("👤 玩家姓名", value="", placeholder="輸入姓名")
 with col2:
-    u_dob = st.date_input("📅 生日 (Birthday)", value=date(2000, 1, 1), min_value=date(1900, 1, 1))
+    u_dob = st.date_input("📅 玩家生日", value=date(2000, 1, 1), min_value=date(1900, 1, 1))
 
 st.write("") 
 
-if st.button("🚀 啟動量子演算 (SPIN)"):
-    if not u_name:
-        st.warning("⚠️ 請輸入姓名以啟動個人化演算！")
-    else:
-        # --- 1. 建立一個空的容器，準備做動畫 ---
-        placeholder = st.empty()
+# --- 拉霸動畫輔助函式 ---
+def render_balls(numbers, special=None, is_blur=False):
+    html = '<div class="ball-container">'
+    blur_class = "blur" if is_blur else ""
+    
+    # 一般號碼
+    for n in numbers:
+        html += f'<div class="ball {blur_class}">{n:02d}</div>'
+    
+    # 特別號 (如果有)
+    if special is not None:
+        html += f'<div class="ball special {blur_class}">{special:02d}</div>'
         
-        # --- 2. 滾動特效 (Rolling Effect) ---
-        # 快速閃動 10 次隨機數字
-        for i in range(10):
-            # 隨機產生假數字做特效
-            fake_l = sorted(random.sample(range(1, 50), 6))
-            fake_ls = random.randint(1, 49)
-            fake_l_str = ' '.join([f'{x:02d}' for x in fake_l])
-            
-            # 在容器中顯示
-            placeholder.markdown(f"""
-            <div class="result-box lotto" style="opacity: 0.7;">
-                <span class="title-text" style="color:#00e5ff;">🔮 量子計算中...</span>
-                <div class="nums" style="filter: blur(2px);">{fake_l_str} <span class="spec">[{fake_ls:02d}]</span></div>
-            </div>
-            """, unsafe_allow_html=True)
-            time.sleep(0.1) # 暫停 0.1 秒
-            
-        # --- 3. 計算最終真實結果 ---
+    html += '</div>'
+    return html
+
+# --------------------------
+
+if st.button("🔴 PULL LEVER (啟動拉霸)"):
+    if not u_name:
+        st.warning("⚠️ 請輸入玩家姓名以開始遊戲！")
+    else:
+        # 1. 準備版面
+        placeholder_status = st.empty()
+        placeholder_lotto = st.empty()
+        placeholder_super = st.empty()
+        placeholder_scratch = st.empty()
+        
+        # 2. 獲取真實結果
         l, ls, s, ss, t, elem, zod, const, r_labels, r_values = run_simulation(u_name, u_dob, audit_list)
         
-        l_str = ' '.join([f'{x:02d}' for x in l])
-        ls_str = f'{ls:02d}'
-        s_str = ' '.join([f'{x:02d}' for x in s])
-        ss_str = f'{ss:02d}'
-        
-        # --- 4. 清除動畫，顯示最終結果 ---
-        placeholder.empty() # 清空動畫
-        
-        # 顯示儀表板
-        st.markdown(f"""
+        # 3. 顯示儀表板 (靜態)
+        placeholder_status.markdown(f"""
         <div class="status-container">
-            <div class="status-item">五行<span class="status-val" style="color:#ffd700;">{elem}</span></div>
-            <div class="status-item">生肖<span class="status-val">{zod.split(' ')[0]}</span></div>
-            <div class="status-item">星座<span class="status-val">{const.split(' ')[0]}</span></div>
+            <div class="status-item">屬性<span class="status-val">{elem}</span></div>
+            <div class="status-item">生肖<span class="status-val">{zod}</span></div>
+            <div class="status-item">星座<span class="status-val">{const}</span></div>
         </div>
         """, unsafe_allow_html=True)
 
-        # 顯示雷達圖
+        # 4. 拉霸動畫 (Rolling Animation)
+        # 第一階段：全速轉動 (模糊效果)
+        for i in range(8):
+            # 隨機生成假號碼
+            fake_l = sorted(random.sample(range(1, 50), 6))
+            fake_ls = random.randint(1, 49)
+            fake_s = sorted(random.sample(range(1, 39), 6))
+            fake_ss = random.randint(1, 8)
+            fake_t = random.sample(range(0, 10), 3)
+            
+            placeholder_lotto.markdown(f"""
+            <div class="slot-frame" style="border-color: #00e5ff;">
+                <div class="slot-label">大樂透 SPINNING...</div>
+                {render_balls(fake_l, fake_ls, is_blur=True)}
+            </div>
+            """, unsafe_allow_html=True)
+            
+            placeholder_super.markdown(f"""
+            <div class="slot-frame" style="border-color: #00ff00;">
+                <div class="slot-label">威力彩 SPINNING...</div>
+                {render_balls(fake_s, fake_ss, is_blur=True)}
+            </div>
+            """, unsafe_allow_html=True)
+            
+            time.sleep(0.1) # 轉動速度
+            
+        # 第二階段：大樂透 逐個停下 (煞車效果)
+        # 這邊簡化為顯示真實結果，去除模糊
+        placeholder_lotto.markdown(f"""
+        <div class="slot-frame" style="border-color: #00e5ff; box-shadow: 0 0 20px #00e5ff;">
+            <div class="slot-label">💎 大樂透 LOTTO 649</div>
+            {render_balls(l, ls, is_blur=False)}
+        </div>
+        """, unsafe_allow_html=True)
+        time.sleep(0.5) # 停頓一下
+        
+        # 第三階段：威力彩 停下
+        placeholder_super.markdown(f"""
+        <div class="slot-frame" style="border-color: #00ff00; box-shadow: 0 0 20px #00ff00;">
+            <div class="slot-label">💵 威力彩 SUPER LOTTO</div>
+            {render_balls(s, ss, is_blur=False)}
+        </div>
+        """, unsafe_allow_html=True)
+        time.sleep(0.5) # 停頓一下
+
+        # 第四階段：刮刮樂 & 雷達圖 出現
         r_values.append(r_values[0])
         r_labels.append(r_labels[0])
         fig = go.Figure(data=go.Scatterpolar(
             r=r_values, theta=r_labels, fill='toself',
-            line_color='#00e5ff', fillcolor='rgba(0, 229, 255, 0.3)',
+            line_color='#ffd700', fillcolor='rgba(255, 215, 0, 0.3)',
             marker=dict(color='#fff', size=6)
         ))
         fig.update_layout(
             polar=dict(
                 radialaxis=dict(visible=False, range=[0, 100]),
                 angularaxis=dict(tickfont=dict(size=14, color='#e0e0e0'), rotation=90, direction='clockwise'),
-                bgcolor='#1f2937'
+                bgcolor='#222'
             ),
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            showlegend=False, height=300, margin=dict(l=40, r=40, t=20, b=20)
+            showlegend=False, height=250, margin=dict(l=40, r=40, t=20, b=20)
         )
-        st.plotly_chart(fig, use_container_width=True)
-
-        # 顯示最終號碼 (加上動畫淡入效果)
-        st.markdown(f"""
-        <div class="result-box lotto">
-            <span class="title-text" style="color:#00e5ff;">🔮 大樂透 (Lotto 649)</span>
-            <div class="nums">{l_str} <span class="spec">[{ls_str}]</span></div>
-        </div>
         
-        <div class="result-box super">
-            <span class="title-text" style="color:#00ff00;">💰 威力彩 (Super Lotto)</span>
-            <div class="nums">{s_str} <span class="spec">[{ss_str}]</span></div>
-        </div>
-        
-        <div class="result-box scratch">
-            <span class="title-text" style="color:#ffd700;">🧧 刮刮樂 (Lucky Tails)</span>
-            <div class="nums">{t[0]} > {t[1]} > {t[2]}</div>
+        placeholder_scratch.markdown(f"""
+        <div class="slot-frame" style="border-color: #ffd700;">
+            <div class="slot-label">🧧 刮刮樂尾數</div>
+            <div style="font-size: 2em; color: #ffd700; font-weight: bold; letter-spacing: 5px;">
+                {t[0]} > {t[1]} > {t[2]}
+            </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        st.plotly_chart(fig, use_container_width=True)
