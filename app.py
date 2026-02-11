@@ -20,11 +20,10 @@ if 'last_result' not in st.session_state:
     st.session_state['last_result'] = None
 
 # ==========================================
-# CSS 樣式（已加強手機適配與防爆）
+# CSS 樣式
 # ==========================================
 st.markdown("""
 <style>
-/* 全局 */
 .stApp { background-color: #000; color: #f0f0f0; font-family: sans-serif; }
 .block-container { padding-top: 1rem !important; padding-bottom: 5rem !important; max-width: 540px !important; }
 
@@ -53,6 +52,17 @@ st.markdown("""
 .highlight {
     color: #00e5ff;
     font-weight: bold;
+}
+.today-info {
+    text-align: center;
+    color: #ffcc00;
+    font-size: 1.05em;
+    font-weight: bold;
+    margin-bottom: 12px;
+    padding: 6px;
+    background: rgba(255, 204, 0, 0.08);
+    border-radius: 6px;
+    border: 1px solid #ffcc0066;
 }
 
 /* 拉霸機外殼 */
@@ -90,7 +100,7 @@ st.markdown("""
     margin-bottom: 6px;
 }
 
-/* 球體 - 加強手機防擠爆 */
+/* 球體 */
 .ball-row {
     display: flex;
     justify-content: center;
@@ -150,6 +160,7 @@ div.stButton > button {
     .machine-title { font-size: 1.5em; }
     .scratch-text { font-size: 1.7em; letter-spacing: 4px; }
     .fate-card { padding: 12px; }
+    .today-info { font-size: 0.95em; }
 }
 
 #MainMenu, footer, header {visibility: hidden;}
@@ -157,7 +168,7 @@ div.stButton > button {
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 核心邏輯函數
+# 核心邏輯函數（保持不變）
 # ==========================================
 def get_element_by_year(year):
     last = year % 10
@@ -278,26 +289,53 @@ if st.button("SPIN (啟動演算)", type="primary"):
             st.rerun()
 
 # ==========================================
-# 結果顯示
+# 結果顯示（含日期時間 + 美化主星）
 # ==========================================
 if st.session_state.get('last_result'):
     res = st.session_state['last_result']
     f = res['fate']
     name_display = res.get('name', '玩家')
 
-    # 命理戰報
+    # 取得當前日期與時間（含星期）
+    now = datetime.now()
+    weekdays = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+    today_str = now.strftime("%Y年%m月%d日")
+    weekday_str = weekdays[now.weekday()]
+    time_str = now.strftime("%H:%M")
+    datetime_display = f"{today_str}　{weekday_str}　{time_str}"
+
+    # 命理戰報 - 美化版 + 日期時間
     fate_html = f"""
 <div class="fate-card">
+    <div class="today-info">
+        {datetime_display}
+    </div>
     <div class="fate-header">🌌 今日運勢戰報 ({name_display})</div>
     <div class="fate-content">
-        <span class="highlight">【先天】</span> {f.get('ganzhi', '未知')}年，屬{f.get('elem', '未知')}<br>
-        <span class="highlight">【主星】</span> <strong>{f['star'][0] if 'star' in f else '未知'}</strong> - {f['star'][1] if 'star' in f else ''}<br>
-        <span class="highlight">【靈動】</span> {f.get('name_res', '無資料')}
+        <div style="margin-bottom:12px;">
+            <span class="highlight">【先天命格】</span><br>
+            {f.get('ganzhi', '未知')}年，屬{f.get('elem', '未知')}
+        </div>
+        
+        <div style="margin-bottom:14px; padding:12px; background:rgba(255,215,0,0.08); border-radius:8px; border:1px solid #ffcc0066;">
+            <span class="highlight" style="font-size:1.15em;">【今日主星】</span><br>
+            <strong style="color:#ffeb3b; font-size:1.45em; letter-spacing:1.2px; display:block; margin:6px 0;">
+                {f['star'][0] if 'star' in f else '未知'}
+            </strong>
+            <span style="color:#ffcc99; font-size:1.05em; line-height:1.4;">
+                {f['star'][1] if 'star' in f else ''}
+            </span>
+        </div>
+        
+        <div>
+            <span class="highlight">【姓名靈動】</span><br>
+            {f.get('name_res', '無資料')}
+        </div>
     </div>
 </div>
 """
 
-    col_fate, col_radar = st.columns([1.3, 1])
+    col_fate, col_radar = st.columns([1.35, 1])
     
     with col_fate:
         st.markdown(fate_html, unsafe_allow_html=True)
@@ -314,18 +352,22 @@ if st.session_state.get('last_result'):
         fig.update_layout(
             polar=dict(
                 radialaxis=dict(visible=False, range=[0, 100]),
-                angularaxis=dict(tickfont=dict(size=10, color='#ccc'), rotation=90, direction='clockwise'),
+                angularaxis=dict(
+                    tickfont=dict(size=11, color='#ddd'),
+                    rotation=90,
+                    direction='clockwise'
+                ),
                 bgcolor='rgba(0,0,0,0)'
             ),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             showlegend=False,
             margin=dict(l=10, r=10, t=10, b=10),
-            height=180
+            height=200
         )
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # 拉霸機 - 修正版（無縮排）
+    # 拉霸機結果（靜態版）
     lotto_balls_html = "".join(f'<div class="ball">{n:02d}</div>' for n in res['l'])
     lotto_balls_html += f'<div class="ball special">{res["ls"]:02d}</div>'
 
