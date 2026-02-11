@@ -7,8 +7,8 @@ import plotly.graph_objects as go
 
 # --- 1. 頁面設定 ---
 st.set_page_config(
-    page_title="Tino Slot Machine", 
-    page_icon="🎰", 
+    page_title="Tino Slot Machine",
+    page_icon="🎰",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -33,11 +33,11 @@ st.markdown("""
     background: linear-gradient(135deg, #222 0%, #0d0d0d 100%);
     border: 6px solid #ffd700;
     border-radius: 20px;
-    padding: 15px; /* 稍微縮小內距 */
+    padding: 15px;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.2), inset 0 0 40px #000;
     margin-bottom: 20px;
     position: relative;
-    overflow: hidden; /* 防止內容撐爆外框 */
+    overflow: hidden;
 }
 
 /* 頂部裝飾燈 */
@@ -53,7 +53,7 @@ st.markdown("""
 .machine-title {
     color: #ffeb3b; font-weight: 900; font-size: 1.5em; letter-spacing: 2px;
     text-shadow: 0 0 8px #ff0000; margin: 0; font-style: italic;
-    white-space: nowrap; /* 防止標題換行 */
+    white-space: nowrap;
 }
 
 /* 捲軸視窗 */
@@ -62,7 +62,7 @@ st.markdown("""
     border: 2px solid #444;
     border-radius: 10px;
     margin-bottom: 10px;
-    padding: 8px 2px; /* 左右內距縮小 */
+    padding: 8px 2px;
     box-shadow: inset 0 0 15px #000;
     position: relative;
     overflow: hidden;
@@ -77,17 +77,17 @@ st.markdown("""
 .reel-label.super { color: #00ff00; text-shadow: 0 0 5px #00ff00; }
 .reel-label.scratch { color: #ffd700; text-shadow: 0 0 5px #ffd700; }
 
-/* 數字球容器 (關鍵修改：使用 flex 讓球自動縮放) */
+/* 數字球容器 */
 .ball-container {
-    display: flex; 
-    justify-content: center; /* 居中 */
-    gap: 4px; /* 間距縮小 */
-    flex-wrap: nowrap; /* 不換行 */
-    margin-top: 5px; 
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    margin-top: 5px;
     width: 100%;
 }
 
-/* 數字球樣式 (預設電腦版) */
+/* 數字球樣式 */
 .ball {
     min-width: 34px; width: 34px; height: 34px; border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, #ffffff, #bbbbbb);
@@ -96,14 +96,14 @@ st.markdown("""
     border: 2px solid #000;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.8);
     font-family: 'Arial', sans-serif;
-    flex-shrink: 0; /* 防止被擠扁 */
+    flex-shrink: 0;
 }
 .ball.special {
     background: radial-gradient(circle at 30% 30%, #ff3333, #990000);
     color: white; border: 2px solid #ff9999;
 }
 .scratch-num {
-    font-size: 1.8em; font-weight: 900; color: #ffd700; 
+    font-size: 1.8em; font-weight: 900; color: #ffd700;
     text-shadow: 0 0 10px #ff9900; letter-spacing: 5px;
     text-align: center; margin-top: 5px;
 }
@@ -132,9 +132,8 @@ div.stButton > button:active {
 .status-txt { color: #fff; font-size: 0.85em; }
 .status-highlight { color: #00e5ff; font-weight: bold; margin-left: 3px;}
 
-/* === [關鍵] 手機版專用調整 (寬度 < 480px) === */
+/* 手機版調整 */
 @media only screen and (max-width: 480px) {
-    /* 縮小球的尺寸，確保一行能塞下 7 顆 (6+1) */
     .ball {
         min-width: 28px !important;
         width: 28px !important;
@@ -143,16 +142,10 @@ div.stButton > button:active {
         border-width: 1px !important;
     }
     .ball-container { gap: 2px !important; }
-    
-    /* 縮小邊框與內距，爭取空間 */
     .slot-machine-casing { padding: 10px; border-width: 3px; }
     .block-container { padding-left: 0.5rem; padding-right: 0.5rem; }
-    
-    /* 標題與文字縮小 */
     .machine-title { font-size: 1.2em; }
     .scratch-num { font-size: 1.5em; letter-spacing: 3px; }
-    
-    /* 按鈕縮小一點 */
     div.stButton > button { width: 80px !important; height: 80px !important; }
 }
 
@@ -160,7 +153,57 @@ div.stButton > button:active {
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. 核心邏輯 ---
+# --- 宇宙敘事生成函數 ---
+def generate_cosmic_story(name, element, zodiac, constellation, seed):
+    random.seed(seed)
+    
+    star_events = [
+        "紫微星入命，財氣微開",
+        "破軍震盪，偏財波動",
+        "武曲守財，金流穩固",
+        "天府照命，資源匯聚",
+        "貪狼啟動，機會流轉",
+        "廉貞化忌，需防小人",
+        "天相拱照，人緣極佳",
+        "七殺臨宮，行動力爆發",
+        "天梁化科，貴人暗助",
+        "太陽發光，事業順遂"
+    ]
+    
+    quantum_states = [
+        "量子場正在重組中...",
+        "平行宇宙分支微幅偏移",
+        "時間軸產生細微共振",
+        "未來財富態正在疊加",
+        "機率雲開始坍縮成形",
+        "因果線微微震盪",
+        "命運熵值正在下降",
+        "宇宙波函數即將觀測",
+        "同步性事件頻率上升",
+        "高維意識正在對齊"
+    ]
+    
+    story = f"""
+🌌 **宇宙敘事報告**  
+
+玩家：**{name}**  
+本命元素：**{element}**  
+生肖能量：**{zodiac}**  
+星座頻率：**{constellation}**
+
+✦ **星曜動態**  
+{random.choice(star_events)}
+
+✦ **量子狀態**  
+{random.choice(quantum_states)}
+
+※ 本次開啟的是『機率共振模式』  
+※ 結果屬於隨機宇宙演化的一部分  
+　　請以輕鬆心態看待此份宇宙訊息 🌠
+"""
+    return story
+
+# --- 核心邏輯 ---
 def get_zodiac(year):
     zodiacs = ["🐵", "🐔", "🐶", "🐷", "🐭", "🐮", "🐯", "🐰", "🐲", "🐍", "🐴", "🐑"]
     return zodiacs[year % 12]
@@ -182,7 +225,7 @@ def get_element_luck(year):
 
 def calculate_dynamic_seed(name, birth_date):
     now = datetime.now()
-    time_str = now.strftime("%Y%m%d%H%M%S%f") 
+    time_str = now.strftime("%Y%m%d%H%M%S%f")
     raw_str = f"{name}_{birth_date}_{time_str}"
     seed_val = int(hashlib.sha256(raw_str.encode('utf-8')).hexdigest(), 16)
     return seed_val
@@ -242,11 +285,15 @@ def run_simulation(name, birth_date, audit_list):
     if element_name in elements:
         idx = elements.index(element_name)
         r_values[idx] = random.randint(85, 95)
-        
+    
+    # 新增宇宙敘事
+    story = generate_cosmic_story(name, element_name, zodiac, constellation, dynamic_seed)
+    
     return {
         'l': l_main, 'ls': l_spec, 's': s_main, 'ss': s_spec, 't': final_tails,
         'elem': element_name, 'zod': zodiac, 'const': constellation,
-        'r_labels': elements, 'r_values': r_values
+        'r_labels': elements, 'r_values': r_values,
+        'story': story
     }
 
 def render_balls(numbers, special=None):
@@ -268,14 +315,14 @@ if not st.session_state['screenshot_mode']:
     with col_input1:
         u_name = st.text_input("玩家姓名", value="", placeholder="輸入姓名")
     with col_input2:
-        u_dob = st.date_input("玩家生日", value=date(2000, 1, 1), 
+        u_dob = st.date_input("玩家生日", value=date(2000, 1, 1),
                               min_value=date(1900, 1, 1), max_value=date(2030, 12, 31))
 
-    st.write("") 
+    st.write("")
     
     col_x, col_btn, col_y = st.columns([1, 1, 1])
     with col_btn:
-        spin_btn = st.button("SPIN") 
+        spin_btn = st.button("SPIN")
 
     if spin_btn:
         if not u_name:
@@ -287,7 +334,7 @@ if not st.session_state['screenshot_mode']:
             st.session_state['u_name'] = u_name
             placeholder = st.empty()
             
-            for i in range(5): 
+            for i in range(5):
                 fake_l = sorted(random.sample(range(1, 50), 6))
                 fake_ls = random.randint(1, 49)
                 fake_s = sorted(random.sample(range(1, 39), 6))
@@ -343,6 +390,12 @@ if st.session_state['last_result']:
             showlegend=False, height=200, margin=dict(l=30, r=30, t=20, b=20)
         )
         st.plotly_chart(fig, use_container_width=True)
+    
+    # 新增：宇宙敘事報告
+    with st.expander("🌌 宇宙敘事報告", expanded=False):
+        st.markdown(res['story'])
+        st.caption("🚀 TINO Cosmic Destiny Engine")
+        st.caption("※ 此為娛樂性宇宙隨機演算，請以輕鬆心情參考")
 
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
