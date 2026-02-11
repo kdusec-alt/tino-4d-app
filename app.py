@@ -6,7 +6,7 @@ import time
 import plotly.graph_objects as go
 
 # ==========================================
-# 1. 系統核心配置
+# 頁面設定
 # ==========================================
 st.set_page_config(
     page_title="Tino Lucky Ball",
@@ -20,79 +20,126 @@ if 'last_result' not in st.session_state:
     st.session_state['last_result'] = None
 
 # ==========================================
-# 2. CSS 樣式表 (加強手機適配)
+# CSS 樣式（已加強手機適配與防爆）
 # ==========================================
 st.markdown("""
 <style>
-/* 全局設定 */
+/* 全局 */
 .stApp { background-color: #000; color: #f0f0f0; font-family: sans-serif; }
 .block-container { padding-top: 1rem !important; padding-bottom: 5rem !important; max-width: 540px !important; }
 
 /* 命理戰報卡片 */
 .fate-card {
     background: linear-gradient(180deg, #1a0505 0%, #000 100%);
-    border: 2px solid #ff4444; border-radius: 12px; padding: 14px;
-    margin-bottom: 16px; box-shadow: 0 0 16px rgba(255, 68, 68, 0.25);
+    border: 2px solid #ff4444;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+    box-shadow: 0 0 16px rgba(255, 68, 68, 0.25);
 }
 .fate-header {
-    color: #ffd700; font-size: 1.15em; font-weight: bold;
-    border-bottom: 1px solid #444; padding-bottom: 6px; margin-bottom: 10px;
+    color: #ffd700;
+    font-size: 1.15em;
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
 }
-.fate-content { font-size: 0.92em; line-height: 1.6; color: #ddd; }
-.highlight { color: #00e5ff; font-weight: bold; }
+.fate-content {
+    font-size: 0.92em;
+    line-height: 1.6;
+    color: #ddd;
+}
+.highlight {
+    color: #00e5ff;
+    font-weight: bold;
+}
 
 /* 拉霸機外殼 */
 .slot-machine {
     background: linear-gradient(135deg, #1a1a1a 0%, #050505 100%);
-    border: 4px solid #ffd700; border-radius: 20px; padding: 16px;
+    border: 4px solid #ffd700;
+    border-radius: 20px;
+    padding: 16px;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.2), inset 0 0 40px #000;
     margin-bottom: 24px;
 }
 .machine-title {
-    color: #ffeb3b; font-weight: 900; font-size: 1.8em;
-    text-align: center; margin-bottom: 16px; font-style: italic;
+    color: #ffeb3b;
+    font-weight: 900;
+    font-size: 1.8em;
+    text-align: center;
+    margin-bottom: 16px;
+    font-style: italic;
     text-shadow: 0 0 8px #ff0000;
 }
 
 /* 號碼視窗 */
 .reel-box {
-    background: #000; border: 2px solid #333; border-radius: 10px;
-    margin-bottom: 12px; padding: 10px 4px;
+    background: #000;
+    border: 2px solid #333;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    padding: 10px 4px;
 }
 .reel-label {
-    font-size: 0.8em; color: #00e5ff; font-weight: bold;
-    text-align: center; margin-bottom: 6px;
+    font-size: 0.8em;
+    color: #00e5ff;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 6px;
 }
 
-/* 球體樣式 - 加強手機防爆 */
+/* 球體 - 加強手機防擠爆 */
 .ball-row {
-    display: flex; justify-content: center; gap: 4px;
-    width: 100%; flex-wrap: nowrap; overflow-x: auto;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     padding: 4px 0;
 }
 .ball {
-    width: 34px !important; height: 34px !important; min-width: 34px !important;
-    border-radius: 50%; flex-shrink: 0;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 50%;
+    flex-shrink: 0;
     background: radial-gradient(circle at 30% 30%, #fff, #bbb);
-    color: #000; font-weight: 900; font-size: 14px;
-    display: flex; align-items: center; justify-content: center;
-    border: 1.5px solid #000; box-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    color: #000;
+    font-weight: 900;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #000;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.8);
 }
 .ball.special {
     background: radial-gradient(circle at 30% 30%, #ff3333, #990000);
-    color: white; border-color: #ff9999;
+    color: white;
+    border-color: #ff9999;
 }
 .scratch-text {
-    font-size: 2em; font-weight: 900; color: #ffd700;
-    text-align: center; letter-spacing: 6px; margin-top: 8px;
+    font-size: 2em;
+    font-weight: 900;
+    color: #ffd700;
+    text-align: center;
+    letter-spacing: 6px;
+    margin-top: 8px;
 }
 
 /* 按鈕 */
 div.stButton > button {
-    width: 100% !important; border-radius: 50px !important; height: 52px !important;
+    width: 100% !important;
+    border-radius: 50px !important;
+    height: 52px !important;
     background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%) !important;
-    border: 2px solid #ffd700 !important; color: white !important;
-    font-weight: bold !important; font-size: 1.25em !important;
+    border: 2px solid #ffd700 !important;
+    color: white !important;
+    font-weight: bold !important;
+    font-size: 1.25em !important;
     margin-top: 12px !important;
 }
 
@@ -102,6 +149,7 @@ div.stButton > button {
     .ball-row { gap: 3px; padding: 3px 0; }
     .machine-title { font-size: 1.5em; }
     .scratch-text { font-size: 1.7em; letter-spacing: 4px; }
+    .fate-card { padding: 12px; }
 }
 
 #MainMenu, footer, header {visibility: hidden;}
@@ -109,7 +157,7 @@ div.stButton > button {
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. 核心邏輯
+# 核心邏輯函數
 # ==========================================
 def get_element_by_year(year):
     last = year % 10
@@ -121,18 +169,15 @@ element_tails = {
     "火": [2,7,3,8], "土": [0,5,2,7]
 }
 
-# --- A. 定數引擎 (今日運勢) ---
 def calculate_fixed_fate(name, dob):
     today_str = date.today().strftime("%Y%m%d")
-    fate_seed = int(hashlib.sha256(f"{name}{dob}{today_str}".encode()).hexdigest(), 16)
+    fate_seed = int(hashlib.sha256(f"{name}{dob}{today_str}".encode('utf-8')).hexdigest(), 16)
     random.seed(fate_seed)
    
-    # 天干地支
     gan = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"]
     zhi = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"]
     ganzhi = f"{gan[(dob.year-4)%10]}{zhi[(dob.year-4)%12]}"
    
-    # 紫微主星
     stars = [
         ("紫微", "帝王降臨，氣場強大"), ("天機", "智謀百出，靈感湧現"),
         ("太陽", "光芒萬丈，正財旺盛"), ("武曲", "剛毅果決，財庫穩固"),
@@ -144,14 +189,12 @@ def calculate_fixed_fate(name, dob):
     ]
     my_star = stars[fate_seed % 14]
    
-    # 姓名靈動
     name_analyses = [
         "外圓內方，領袖格局", "財庫飽滿，直覺敏銳", "五行相生，貴人顯現",
         "氣場強大，突破重圍", "穩紮穩打，積沙成塔", "靈光乍現，意外之喜"
     ]
     name_res = name_analyses[fate_seed % 6]
    
-    # 五行雷達
     elements = ['金', '木', '水', '火', '土']
     r_vals = [random.randint(40, 75) for _ in range(5)]
     elem_char = get_element_by_year(dob.year)
@@ -167,7 +210,6 @@ def calculate_fixed_fate(name, dob):
         'elem': elem_char
     }
 
-# --- B. 變數引擎 (開獎號碼) ---
 def check_filters(numbers):
     if sum(1 for n in numbers if n <= 31) > 4: return False
     sn = sorted(numbers)
@@ -176,7 +218,6 @@ def check_filters(numbers):
     return True
 
 def calculate_variable_numbers(lucky_digits):
-    # 使用更完整的時間種子，避免微秒碰撞
     now_seed = int(hashlib.sha256(datetime.now().strftime("%Y%m%d%H%M%S%f").encode()).hexdigest(), 16)
     random.seed(now_seed)
    
@@ -190,7 +231,7 @@ def calculate_variable_numbers(lucky_digits):
             final_l = sorted(temp)
             break
     if not final_l:
-        final_l = sorted(temp)  # 最後一組也用
+        final_l = sorted(temp)
    
     l_spec = random.randint(1, 49)
     while l_spec in final_l:
@@ -204,7 +245,7 @@ def calculate_variable_numbers(lucky_digits):
     return final_l, l_spec, s_main, s_spec, t_nums
 
 # ==========================================
-# 4. 介面與渲染
+# 介面
 # ==========================================
 st.markdown("<h2 style='text-align:center; color:#ffd700;'>🎱 Tino Lucky Ball</h2>", unsafe_allow_html=True)
 
@@ -220,7 +261,7 @@ if st.button("SPIN (啟動演算)", type="primary"):
         st.error("請輸入姓名")
     else:
         with st.spinner("宇宙演算中..."):
-            time.sleep(1.2)  # 模擬動畫時間
+            time.sleep(1.2)
             
             fate_data = calculate_fixed_fate(u_name.strip(), u_dob)
             tails = element_tails.get(fate_data['elem'], [1,6])
@@ -234,25 +275,28 @@ if st.button("SPIN (啟動演算)", type="primary"):
                 'date': date.today().strftime("%Y-%m-%d"),
                 'name': u_name.strip()
             }
-            st.rerun()  # 強制刷新畫面
+            st.rerun()
 
-# 顯示結果
+# ==========================================
+# 結果顯示
+# ==========================================
 if st.session_state.get('last_result'):
     res = st.session_state['last_result']
     f = res['fate']
     name_display = res.get('name', '玩家')
 
-    # 命理戰報區
+    # 命理戰報
     fate_html = f"""
 <div class="fate-card">
     <div class="fate-header">🌌 今日運勢戰報 ({name_display})</div>
     <div class="fate-content">
-        <span class="highlight">【先天】</span> {f['ganzhi']}年，屬{f['elem']}<br>
-        <span class="highlight">【主星】</span> <strong>{f['star'][0]}</strong> - {f['star'][1]}<br>
-        <span class="highlight">【靈動】</span> {f['name_res']}
+        <span class="highlight">【先天】</span> {f.get('ganzhi', '未知')}年，屬{f.get('elem', '未知')}<br>
+        <span class="highlight">【主星】</span> <strong>{f['star'][0] if 'star' in f else '未知'}</strong> - {f['star'][1] if 'star' in f else ''}<br>
+        <span class="highlight">【靈動】</span> {f.get('name_res', '無資料')}
     </div>
 </div>
 """
+
     col_fate, col_radar = st.columns([1.3, 1])
     
     with col_fate:
@@ -281,33 +325,29 @@ if st.session_state.get('last_result'):
         )
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # 拉霸機結果區
-    lotto_balls = "".join([f'<div class="ball">{n:02d}</div>' for n in res['l']])
-    lotto_balls += f'<div class="ball special">{res["ls"]:02d}</div>'
+    # 拉霸機 - 修正版（無縮排）
+    lotto_balls_html = "".join(f'<div class="ball">{n:02d}</div>' for n in res['l'])
+    lotto_balls_html += f'<div class="ball special">{res["ls"]:02d}</div>'
 
-    super_balls = "".join([f'<div class="ball">{n:02d}</div>' for n in res['s']])
-    super_balls += f'<div class="ball special">{res["ss"]:02d}</div>'
+    super_balls_html = "".join(f'<div class="ball">{n:02d}</div>' for n in res['s'])
+    super_balls_html += f'<div class="ball special">{res["ss"]:02d}</div>'
 
-    scratch_txt = f"{res['t'][0]} &nbsp; {res['t'][1]} &nbsp; {res['t'][2]}"
+    scratch_html = f"{res['t'][0]}&nbsp;&nbsp;{res['t'][1]}&nbsp;&nbsp;{res['t'][2]}"
 
-    machine_html = f"""
-<div class="slot-machine">
-    <div class="machine-title">TINO LUCKY BALL</div>
-    
-    <div class="reel-box">
-        <div class="reel-label">大樂透 LOTTO</div>
-        <div class="ball-row">{lotto_balls}</div>
-    </div>
-    
-    <div class="reel-box">
-        <div class="reel-label" style="color:#00ff88;">威力彩 SUPER</div>
-        <div class="ball-row">{super_balls}</div>
-    </div>
-    
-    <div class="reel-box">
-        <div class="reel-label" style="color:#ffd700;">刮刮樂 SCRATCH</div>
-        <div class="scratch-text">{scratch_txt}</div>
-    </div>
+    machine_html = f"""<div class="slot-machine">
+<div class="machine-title">TINO LUCKY BALL</div>
+<div class="reel-box">
+<div class="reel-label">大樂透 LOTTO</div>
+<div class="ball-row">{lotto_balls_html}</div>
 </div>
-"""
+<div class="reel-box">
+<div class="reel-label" style="color:#00ff88;">威力彩 SUPER</div>
+<div class="ball-row">{super_balls_html}</div>
+</div>
+<div class="reel-box">
+<div class="reel-label" style="color:#ffd700;">刮刮樂 SCRATCH</div>
+<div class="scratch-text">{scratch_html}</div>
+</div>
+</div>"""
+
     st.markdown(machine_html, unsafe_allow_html=True)
