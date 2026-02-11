@@ -3,7 +3,7 @@ import random
 import hashlib
 from datetime import datetime, date
 import time
-import plotly.graph_objects as go # 引入畫圖模組
+import plotly.graph_objects as go
 
 # --- 1. 頁面與 Cyberpunk 風格設定 ---
 st.set_page_config(
@@ -84,27 +84,23 @@ def get_element_luck(year):
     if last_digit in [8, 9]: return "土", [5, 0, 2, 7]
     return "未知", []
 
-def calculate_daily_seed(name, birth_date):
-    today_str = datetime.now().strftime("%Y%m%d")
-    raw_str = f"{name}_{birth_date}_{today_str}"
+def calculate_dynamic_seed(name, birth_date):
+    # --- 關鍵修改：加入微秒 (microseconds) 讓每次按下都不同 ---
+    now = datetime.now()
+    time_str = now.strftime("%Y%m%d%H%M%S%f") 
+    raw_str = f"{name}_{birth_date}_{time_str}"
     seed_val = int(hashlib.sha256(raw_str.encode('utf-8')).hexdigest(), 16)
-    return seed_val, today_str
+    return seed_val
 
-# 新增：計算五行能量分佈 (用於畫圖)
 def calculate_element_distribution(main_element, seed):
-    # 初始化五行能量 (金, 木, 水, 火, 土)
     elements = ['金', '木', '水', '火', '土']
-    # 利用種子產生隨機基礎值 (40-80之間)
     random.seed(seed)
     values = [random.randint(40, 70) for _ in range(5)]
     
-    # 強化本命屬性 (讓它突出)
     if main_element in elements:
         idx = elements.index(main_element)
-        values[idx] = random.randint(90, 100) # 本命衝高
-        
-        # 強化相生屬性 (例如金生水，若主是水，金也要高)
-        support_map = {'金': 4, '木': 2, '水': 0, '火': 1, '土': 3} # 誰生它
+        values[idx] = random.randint(90, 100)
+        support_map = {'金': 4, '木': 2, '水': 0, '火': 1, '土': 3}
         support_idx = support_map[main_element]
         values[support_idx] += random.randint(10, 20)
         
@@ -115,17 +111,17 @@ def run_simulation(name, birth_date, audit_list):
     zodiac = get_zodiac(birth_date.year)
     constellation = get_constellation(birth_date.month, birth_date.day)
     
-    daily_seed, date_str = calculate_daily_seed(name, birth_date)
-    random.seed(daily_seed)
+    # 使用動態 Seed
+    dynamic_seed = calculate_dynamic_seed(name, birth_date)
+    random.seed(dynamic_seed)
     
-    # 計算圖表數據
-    radar_labels, radar_values = calculate_element_distribution(element_name, daily_seed)
+    radar_labels, radar_values = calculate_element_distribution(element_name, dynamic_seed)
     
     weights = {i: 1.0 for i in range(1, 50)}
     for i in range(1, 50):
         if i % 10 in lucky_digits[:2]: weights[i] *= 2.5
         if i % 10 in lucky_digits[2:]: weights[i] *= 1.5
-        name_hash = (daily_seed % 49) + 1
+        name_hash = (dynamic_seed % 49) + 1
         if i == name_hash: weights[i] *= 3.0
         if i == birth_date.day: weights[i] *= 2.0
         if i in audit_list: weights[i] *= 0.1
@@ -146,12 +142,13 @@ def run_simulation(name, birth_date, audit_list):
     s_spec = random.randint(1, 8)
     
     base_tails = lucky_digits[:2] 
-    daily_lucky = (daily_seed % 10)
-    final_tails = list(set(base_tails + [daily_lucky]))
+    # 動態刮刮樂
+    dynamic_lucky = (dynamic_seed % 10)
+    final_tails = list(set(base_tails + [dynamic_lucky]))
     while len(final_tails) < 3:
-        extra = (daily_seed // 10) % 10
+        extra = (dynamic_seed // 10) % 10
         if extra not in final_tails: final_tails.append(extra)
-        daily_seed //= 10
+        dynamic_seed //= 10
     final_tails = final_tails[:3]
     random.shuffle(final_tails)
     
@@ -160,7 +157,7 @@ def run_simulation(name, birth_date, audit_list):
 # --- 3. App 介面佈局 ---
 
 st.markdown("<h1>🎱 Tino Lucky Ball</h1>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>QUANTUM RESONANCE | CORE V9.5</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>QUANTUM RESONANCE | CORE V9.7</div>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("🛡️ 系統校正")
@@ -174,80 +171,89 @@ with st.sidebar:
 
 col1, col2 = st.columns(2)
 with col1:
-    u_name = st.text_input("👤 姓名", value="鄭廷暘")
+    u_name = st.text_input("👤 姓名 (Name)", value="", placeholder="請輸入姓名")
 with col2:
-    u_dob = st.date_input("📅 生日", value=date(1983, 7, 15), min_value=date(1900, 1, 1))
+    u_dob = st.date_input("📅 生日 (Birthday)", value=date(2000, 1, 1), min_value=date(1900, 1, 1))
 
 st.write("") 
 
-if st.button("🚀 啟動量子演算 (DAILY SPIN)"):
-    with st.spinner("正在解析五行能量場..."):
-        time.sleep(0.5)
+if st.button("🚀 啟動量子演算 (SPIN)"):
+    if not u_name:
+        st.warning("⚠️ 請輸入姓名以啟動個人化演算！")
+    else:
+        # --- 1. 建立一個空的容器，準備做動畫 ---
+        placeholder = st.empty()
         
-    l, ls, s, ss, t, elem, zod, const, r_labels, r_values = run_simulation(u_name, u_dob, audit_list)
-    
-    l_str = ' '.join([f'{x:02d}' for x in l])
-    ls_str = f'{ls:02d}'
-    s_str = ' '.join([f'{x:02d}' for x in s])
-    ss_str = f'{ss:02d}'
-    
-    # 儀表板
-    st.markdown(f"""
-    <div class="status-container">
-        <div class="status-item">五行<span class="status-val" style="color:#ffd700;">{elem}</span></div>
-        <div class="status-item">生肖<span class="status-val">{zod.split(' ')[0]}</span></div>
-        <div class="status-item">星座<span class="status-val">{const.split(' ')[0]}</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+        # --- 2. 滾動特效 (Rolling Effect) ---
+        # 快速閃動 10 次隨機數字
+        for i in range(10):
+            # 隨機產生假數字做特效
+            fake_l = sorted(random.sample(range(1, 50), 6))
+            fake_ls = random.randint(1, 49)
+            fake_l_str = ' '.join([f'{x:02d}' for x in fake_l])
+            
+            # 在容器中顯示
+            placeholder.markdown(f"""
+            <div class="result-box lotto" style="opacity: 0.7;">
+                <span class="title-text" style="color:#00e5ff;">🔮 量子計算中...</span>
+                <div class="nums" style="filter: blur(2px);">{fake_l_str} <span class="spec">[{fake_ls:02d}]</span></div>
+            </div>
+            """, unsafe_allow_html=True)
+            time.sleep(0.1) # 暫停 0.1 秒
+            
+        # --- 3. 計算最終真實結果 ---
+        l, ls, s, ss, t, elem, zod, const, r_labels, r_values = run_simulation(u_name, u_dob, audit_list)
+        
+        l_str = ' '.join([f'{x:02d}' for x in l])
+        ls_str = f'{ls:02d}'
+        s_str = ' '.join([f'{x:02d}' for x in s])
+        ss_str = f'{ss:02d}'
+        
+        # --- 4. 清除動畫，顯示最終結果 ---
+        placeholder.empty() # 清空動畫
+        
+        # 顯示儀表板
+        st.markdown(f"""
+        <div class="status-container">
+            <div class="status-item">五行<span class="status-val" style="color:#ffd700;">{elem}</span></div>
+            <div class="status-item">生肖<span class="status-val">{zod.split(' ')[0]}</span></div>
+            <div class="status-item">星座<span class="status-val">{const.split(' ')[0]}</span></div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # --- 新增：五行雷達圖 (Plotly High-Tech Style) ---
-    # 為了讓圖表閉合，把第一個數據加到最後
-    r_values.append(r_values[0])
-    r_labels.append(r_labels[0])
-
-    fig = go.Figure(data=go.Scatterpolar(
-        r=r_values,
-        theta=r_labels,
-        fill='toself',
-        line_color='#00e5ff',
-        fillcolor='rgba(0, 229, 255, 0.3)',
-        marker=dict(color='#fff', size=6)
-    ))
-
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(visible=False, range=[0, 100]),
-            angularaxis=dict(
-                tickfont=dict(size=14, color='#e0e0e0'),
-                rotation=90,
-                direction='clockwise'
+        # 顯示雷達圖
+        r_values.append(r_values[0])
+        r_labels.append(r_labels[0])
+        fig = go.Figure(data=go.Scatterpolar(
+            r=r_values, theta=r_labels, fill='toself',
+            line_color='#00e5ff', fillcolor='rgba(0, 229, 255, 0.3)',
+            marker=dict(color='#fff', size=6)
+        ))
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=False, range=[0, 100]),
+                angularaxis=dict(tickfont=dict(size=14, color='#e0e0e0'), rotation=90, direction='clockwise'),
+                bgcolor='#1f2937'
             ),
-            bgcolor='#1f2937'
-        ),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        showlegend=False,
-        height=300,
-        margin=dict(l=40, r=40, t=20, b=20)
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-    # ----------------------------------------------
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            showlegend=False, height=300, margin=dict(l=40, r=40, t=20, b=20)
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-    # 結果卡片
-    st.markdown(f"""
-    <div class="result-box lotto">
-        <span class="title-text" style="color:#00e5ff;">🔮 大樂透</span>
-        <div class="nums">{l_str} <span class="spec">[{ls_str}]</span></div>
-    </div>
-    
-    <div class="result-box super">
-        <span class="title-text" style="color:#00ff00;">💰 威力彩</span>
-        <div class="nums">{s_str} <span class="spec">[{ss_str}]</span></div>
-    </div>
-    
-    <div class="result-box scratch">
-        <span class="title-text" style="color:#ffd700;">🧧 刮刮樂</span>
-        <div class="nums">{t[0]} > {t[1]} > {t[2]}</div>
-    </div>
-    """, unsafe_allow_html=True)
+        # 顯示最終號碼 (加上動畫淡入效果)
+        st.markdown(f"""
+        <div class="result-box lotto">
+            <span class="title-text" style="color:#00e5ff;">🔮 大樂透 (Lotto 649)</span>
+            <div class="nums">{l_str} <span class="spec">[{ls_str}]</span></div>
+        </div>
+        
+        <div class="result-box super">
+            <span class="title-text" style="color:#00ff00;">💰 威力彩 (Super Lotto)</span>
+            <div class="nums">{s_str} <span class="spec">[{ss_str}]</span></div>
+        </div>
+        
+        <div class="result-box scratch">
+            <span class="title-text" style="color:#ffd700;">🧧 刮刮樂 (Lucky Tails)</span>
+            <div class="nums">{t[0]} > {t[1]} > {t[2]}</div>
+        </div>
+        """, unsafe_allow_html=True)
