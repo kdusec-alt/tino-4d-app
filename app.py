@@ -19,123 +19,116 @@ if 'screenshot_mode' not in st.session_state:
 if 'last_result' not in st.session_state:
     st.session_state['last_result'] = None
 
-# --- CSS: 修正樣式與渲染 ---
+# --- CSS: 賭城黑金風格 ---
 st.markdown("""
-    <style>
-    /* 全局設定 */
-    .stApp { background-color: #000; color: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-    .block-container { padding-top: 1rem; padding-bottom: 5rem; max-width: 500px; }
+<style>
+/* 全局設定 */
+.stApp { background-color: #000; color: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+.block-container { padding-top: 1rem; padding-bottom: 5rem; max-width: 500px; }
 
-    /* === 拉霸機外殼 === */
-    .slot-machine-casing {
-        background: linear-gradient(135deg, #222 0%, #0d0d0d 100%);
-        border: 6px solid #ffd700;
-        border-radius: 25px;
-        padding: 20px;
-        box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), inset 0 0 60px #000;
-        margin-bottom: 20px;
-        position: relative;
-    }
-    
-    /* 頂部裝飾燈 */
-    .machine-top {
-        text-align: center;
-        background: #4a0000;
-        border-radius: 15px;
-        padding: 10px;
-        margin-bottom: 20px;
-        border: 3px solid #ff3333;
-        box-shadow: 0 0 15px #ff0000, inset 0 0 20px #000;
-    }
-    .machine-title {
-        color: #ffeb3b; font-weight: 900; font-size: 1.8em; letter-spacing: 3px;
-        text-shadow: 0 0 10px #ff0000; margin: 0; font-style: italic;
-    }
+/* 拉霸機外殼 */
+.slot-machine-casing {
+    background: linear-gradient(135deg, #222 0%, #0d0d0d 100%);
+    border: 6px solid #ffd700;
+    border-radius: 25px;
+    padding: 20px;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), inset 0 0 60px #000;
+    margin-bottom: 20px;
+    position: relative;
+}
 
-    /* === 捲軸視窗 === */
-    .reel-window {
-        background: #000;
-        border: 2px solid #444;
-        border-radius: 10px;
-        margin-bottom: 12px;
-        padding: 10px 5px;
-        box-shadow: inset 0 0 20px #000;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    /* 捲軸標籤 */
-    .reel-label {
-        font-size: 0.7em; color: #888; font-weight: bold; text-transform: uppercase;
-        margin-bottom: 5px; text-align: center; letter-spacing: 2px;
-    }
-    .reel-label.main { color: #00e5ff; text-shadow: 0 0 5px #00e5ff; }
-    .reel-label.super { color: #00ff00; text-shadow: 0 0 5px #00ff00; }
-    .reel-label.scratch { color: #ffd700; text-shadow: 0 0 5px #ffd700; }
+/* 頂部裝飾燈 */
+.machine-top {
+    text-align: center;
+    background: #4a0000;
+    border-radius: 15px;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 3px solid #ff3333;
+    box-shadow: 0 0 15px #ff0000, inset 0 0 20px #000;
+}
+.machine-title {
+    color: #ffeb3b; font-weight: 900; font-size: 1.8em; letter-spacing: 3px;
+    text-shadow: 0 0 10px #ff0000; margin: 0; font-style: italic;
+}
 
-    /* 數字球樣式 */
-    .ball-container {
-        display: flex; justify-content: center; gap: 5px; flex-wrap: nowrap; margin-top: 5px; overflow-x: auto;
-    }
-    .ball {
-        min-width: 36px; width: 36px; height: 36px; border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, #ffffff, #bbbbbb);
-        color: #000; font-weight: 900; font-size: 16px;
-        display: flex; align-items: center; justify-content: center;
-        border: 2px solid #000;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.8);
-        font-family: 'Arial', sans-serif;
-    }
-    .ball.special {
-        background: radial-gradient(circle at 30% 30%, #ff3333, #990000);
-        color: white; border: 2px solid #ff9999;
-    }
-    .scratch-num {
-        font-size: 2em; font-weight: 900; color: #ffd700; 
-        text-shadow: 0 0 15px #ff9900; letter-spacing: 8px;
-        text-align: center; margin-top: 5px;
-    }
+/* 捲軸視窗 */
+.reel-window {
+    background: #000;
+    border: 2px solid #444;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    padding: 10px 5px;
+    box-shadow: inset 0 0 20px #000;
+    position: relative;
+    overflow: hidden;
+}
 
-    /* === 擬真拉桿按鈕 (修復渲染問題) === */
-    div.stButton > button {
-        width: 100px !important;
-        height: 100px !important;
-        border-radius: 50% !important;
-        background: radial-gradient(circle at 30% 30%, #ff4444, #990000) !important;
-        border: 4px solid #cc0000 !important;
-        box-shadow: 
-            0 10px 0 #550000, 
-            0 20px 20px rgba(0,0,0,0.6), 
-            inset 0 0 20px rgba(0,0,0,0.5) !important;
-        color: white !important;
-        font-weight: bold !important;
-        font-size: 1.2em !important;
-        margin: 0 auto !important;
-        display: block !important;
-        position: relative !important;
-        z-index: 10 !important;
-    }
-    div.stButton > button:active {
-        transform: translateY(10px) !important;
-        box-shadow: 0 0 0 #550000, inset 0 0 20px rgba(0,0,0,0.8) !important;
-    }
-    div.stButton > button p {
-        font-size: 1.2em !important;
-        font-weight: bold !important;
-    }
+/* 捲軸標籤 */
+.reel-label {
+    font-size: 0.7em; color: #888; font-weight: bold; text-transform: uppercase;
+    margin-bottom: 5px; text-align: center; letter-spacing: 2px;
+}
+.reel-label.main { color: #00e5ff; text-shadow: 0 0 5px #00e5ff; }
+.reel-label.super { color: #00ff00; text-shadow: 0 0 5px #00ff00; }
+.reel-label.scratch { color: #ffd700; text-shadow: 0 0 5px #ffd700; }
 
-    /* 儀表板 */
-    .status-bar {
-        display: flex; justify-content: space-between;
-        background: #111; border-radius: 8px; padding: 8px 15px; margin-bottom: 15px;
-        border: 1px solid #333;
-    }
-    .status-txt { color: #fff; font-size: 0.9em; }
-    .status-highlight { color: #00e5ff; font-weight: bold; margin-left: 5px;}
-    
-    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
+/* 數字球樣式 */
+.ball-container {
+    display: flex; justify-content: center; gap: 5px; flex-wrap: nowrap; margin-top: 5px; overflow-x: auto;
+}
+.ball {
+    min-width: 36px; width: 36px; height: 36px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ffffff, #bbbbbb);
+    color: #000; font-weight: 900; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #000;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+    font-family: 'Arial', sans-serif;
+}
+.ball.special {
+    background: radial-gradient(circle at 30% 30%, #ff3333, #990000);
+    color: white; border: 2px solid #ff9999;
+}
+.scratch-num {
+    font-size: 2em; font-weight: 900; color: #ffd700; 
+    text-shadow: 0 0 15px #ff9900; letter-spacing: 8px;
+    text-align: center; margin-top: 5px;
+}
+
+/* 擬真拉桿按鈕 */
+div.stButton > button {
+    width: 100px !important;
+    height: 100px !important;
+    border-radius: 50% !important;
+    background: radial-gradient(circle at 30% 30%, #ff4444, #990000) !important;
+    border: 4px solid #cc0000 !important;
+    box-shadow: 0 10px 0 #550000, 0 20px 20px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.5) !important;
+    color: white !important;
+    font-weight: bold !important;
+    font-size: 1.2em !important;
+    margin: 0 auto !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+div.stButton > button:active {
+    transform: translateY(10px) !important;
+    box-shadow: 0 0 0 #550000, inset 0 0 20px rgba(0,0,0,0.8) !important;
+}
+
+/* 儀表板 */
+.status-bar {
+    display: flex; justify-content: space-between;
+    background: #111; border-radius: 8px; padding: 8px 15px; margin-bottom: 15px;
+    border: 1px solid #333;
+}
+.status-txt { color: #fff; font-size: 0.9em; }
+.status-highlight { color: #00e5ff; font-weight: bold; margin-left: 5px;}
+
+#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
 # --- 2. 核心邏輯 ---
 def get_zodiac(year):
@@ -264,6 +257,7 @@ if not st.session_state['screenshot_mode']:
             st.session_state['u_name'] = u_name
             placeholder = st.empty()
             
+            # 動畫播放 (修正縮排)
             for i in range(5): 
                 fake_l = sorted(random.sample(range(1, 50), 6))
                 fake_ls = random.randint(1, 49)
@@ -271,72 +265,38 @@ if not st.session_state['screenshot_mode']:
                 fake_ss = random.randint(1, 8)
                 fake_scratch = random.sample(range(0, 10), 3)
                 
-                # 動畫區塊：確認使用 unsafe_allow_html=True
+                # 這裡最重要：所有 HTML 靠左對齊，不要有縮排！
                 placeholder.markdown(f"""
-                <div class="slot-machine-casing">
-                    <div class="machine-top"><h1 class="machine-title">SPINNING...</h1></div>
-                    
-                    <div class="reel-window">
-                        <div class="reel-label main">大樂透</div>
-                        {render_balls(fake_l, fake_ls)}
-                    </div>
-                    
-                    <div class="reel-window">
-                        <div class="reel-label super">威力彩</div>
-                        {render_balls(fake_s, fake_ss)}
-                    </div>
-                    
-                    <div class="reel-window">
-                        <div class="reel-label scratch">刮刮樂</div>
-                        <div class="scratch-num">{fake_scratch[0]} {fake_scratch[1]} {fake_scratch[2]}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+<div class="slot-machine-casing">
+<div class="machine-top"><h1 class="machine-title">SPINNING...</h1></div>
+<div class="reel-window"><div class="reel-label main">大樂透</div>{render_balls(fake_l, fake_ls)}</div>
+<div class="reel-window"><div class="reel-label super">威力彩</div>{render_balls(fake_s, fake_ss)}</div>
+<div class="reel-window"><div class="reel-label scratch">刮刮樂</div><div class="scratch-num">{fake_scratch[0]} {fake_scratch[1]} {fake_scratch[2]}</div></div>
+</div>""", unsafe_allow_html=True)
                 time.sleep(0.08)
             
             placeholder.empty()
             result = run_simulation(u_name, u_dob, audit_list if 'audit_list' in locals() else [])
             st.session_state['last_result'] = result
 
-# --- 結果顯示區 (重點修正) ---
+# --- 結果顯示區 (修正縮排) ---
 if st.session_state['last_result']:
     res = st.session_state['last_result']
     t = res['t']
     
-    # 建立 HTML 字串
-    html_content = f"""
-    <div class="slot-machine-casing">
-        <div class="machine-top">
-            <h1 class="machine-title">TINO LUCKY BALL</h1>
-        </div>
-        
-        <div class="status-bar">
-            <div>屬性 <span class="status-highlight">{res['elem']}</span></div>
-            <div>生肖 <span class="status-highlight">{res['zod']}</span></div>
-            <div>星座 <span class="status-highlight">{res['const']}</span></div>
-        </div>
-
-        <div class="reel-window">
-            <div class="reel-label main">大樂透 LOTTO</div>
-            {render_balls(res['l'], res['ls'])}
-        </div>
-
-        <div class="reel-window">
-            <div class="reel-label super">威力彩 SUPER</div>
-            {render_balls(res['s'], res['ss'])}
-        </div>
-
-        <div class="reel-window">
-            <div class="reel-label scratch">刮刮樂 SCRATCH</div>
-            <div class="scratch-num">
-                {t[0]} &nbsp; {t[1]} &nbsp; {t[2]}
-            </div>
-        </div>
-    </div>
-    """
-    
-    # 渲染 HTML (這裡最關鍵，一定要有 unsafe_allow_html=True)
-    st.markdown(html_content, unsafe_allow_html=True)
+    # 這裡也一樣：HTML 靠左對齊
+    st.markdown(f"""
+<div class="slot-machine-casing">
+<div class="machine-top"><h1 class="machine-title">TINO LUCKY BALL</h1></div>
+<div class="status-bar">
+<div>屬性 <span class="status-highlight">{res['elem']}</span></div>
+<div>生肖 <span class="status-highlight">{res['zod']}</span></div>
+<div>星座 <span class="status-highlight">{res['const']}</span></div>
+</div>
+<div class="reel-window"><div class="reel-label main">大樂透 LOTTO</div>{render_balls(res['l'], res['ls'])}</div>
+<div class="reel-window"><div class="reel-label super">威力彩 SUPER</div>{render_balls(res['s'], res['ss'])}</div>
+<div class="reel-window"><div class="reel-label scratch">刮刮樂 SCRATCH</div><div class="scratch-num">{t[0]} &nbsp; {t[1]} &nbsp; {t[2]}</div></div>
+</div>""", unsafe_allow_html=True)
     
     with st.expander("📊 能量分析", expanded=False):
         r_vals = res['r_values'] + [res['r_values'][0]]
