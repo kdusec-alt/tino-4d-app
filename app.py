@@ -28,14 +28,21 @@ if 'last_result' not in st.session_state:
 # ==========================================
 st.markdown("""
 <style>
+/* 全局黑金風格 */
 .stApp { background: #000; color: #eee; font-family: "Microsoft JhengHei", sans-serif; }
 .block-container { padding: 0.5rem 0.8rem 1rem !important; max-width: 520px !important; }
+
+/* 標題 */
 h2 { margin: 0.4rem 0 0.8rem !important; font-size: 1.6em !important; text-align: center; color: #ffd700; text-shadow: 0 0 10px #ff0000; }
+
+/* 輸入優化 */
 div[data-testid="stHorizontalBlock"] { gap: 0.5rem; }
 input[type="number"] {
     background-color: #111 !important; color: #eee !important; border: 1px solid #444 !important;
     border-radius: 6px !important; text-align: center !important; font-weight: bold !important;
 }
+
+/* 戰報與顯示 */
 .today-info {
     text-align: center; font-size: 0.9em; color: #ffcc00; margin: 0.3rem 0 0.8rem; padding: 6px;
     background: rgba(255,204,0,0.1); border-radius: 6px; letter-spacing: 1px; border: 1px solid #332200;
@@ -47,15 +54,20 @@ input[type="number"] {
 }
 .fate-header { font-size: 1.1em; color: #ffd700; margin-bottom: 8px; font-weight: bold; border-bottom: 1px solid #331111; padding-bottom: 5px;}
 .fate-content { font-size: 0.9em; line-height: 1.6; color: #ddd; text-align: justify; }
-.highlight { color: #00e5ff; font-weight: bold; margin-right: 3px; }
-.bazi-box { display: flex; justify-content: space-between; margin: 8px 0; background: #111; padding: 5px; border-radius: 4px; border: 1px solid #333; }
+
+/* 八字儀表板 */
+.bazi-box { display: flex; justify-content: space-between; margin: 8px 0; background: #111; padding: 6px; border-radius: 6px; border: 1px solid #333; }
 .bazi-col { text-align: center; width: 25%; }
-.bazi-label { font-size: 0.7em; color: #888; }
-.bazi-val { font-size: 1.1em; color: #ffd700; font-weight: bold; }
-.main-star-box { margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; }
+.bazi-label { font-size: 0.7em; color: #888; margin-bottom: 2px; }
+.bazi-val { font-size: 1.2em; color: #ffd700; font-weight: bold; text-shadow: 0 0 3px #aa6600; }
+
+/* 主星 */
+.main-star-box { margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid #ffd700; }
 .main-star-title { color: #aaa; font-size: 0.8em; letter-spacing: 1px;}
 .main-star-name { color: #ffeb3b; font-size: 1.4em; font-weight: bold; margin: 2px 0; text-shadow: 0 0 8px #ff9900; }
 .main-star-desc { color: #ffddaa; font-size: 0.95em; font-style: normal; display: block; margin-top: 4px; border-top: 1px solid #444; padding-top: 4px;}
+
+/* 樂透區 */
 .slot-machine { background: #0a0a0a; border: 2px solid #ffd700; border-radius: 12px; padding: 10px; margin-top: 15px; margin-bottom: 20px;}
 .machine-title { font-size: 1.3em; margin: 0 0 8px; text-align: center; color: #ffeb3b; font-weight: bold; font-style: italic; }
 .reel-box { margin: 8px 0; padding: 8px 4px; border-radius: 8px; background: #000; border: 1px solid #333; }
@@ -70,7 +82,11 @@ input[type="number"] {
 }
 .ball.special { background: radial-gradient(circle at 30% 30%, #ff3333, #990000); color: white; border: 1px solid #ff8888; }
 .scratch-text { font-size: 1.8em; color: #ffd700; text-align: center; letter-spacing: 6px; margin-top: 4px; font-weight: 900; text-shadow: 0 0 8px #ff9900; }
+
+/* 底部警示 */
 .disclaimer-box { margin-top: 30px; padding-top: 15px; border-top: 1px solid #333; text-align: center; color: #666; font-size: 0.75em; line-height: 1.5; }
+
+/* 按鈕 */
 div.stButton > button {
     width: 100%; height: 50px; border-radius: 25px;
     background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%);
@@ -78,6 +94,7 @@ div.stButton > button {
     box-shadow: 0 4px 0 #880000; margin-top: 10px;
 }
 div.stButton > button:active { transform: translateY(2px); box-shadow: 0 0 0 #880000; }
+
 @media (max-width: 480px) { .main-star-name { font-size: 1.3em; } .ball { width: 28px !important; height: 28px !important; font-size: 12px !important; } }
 #MainMenu, footer, header { visibility: hidden; }
 </style>
@@ -87,13 +104,10 @@ div.stButton > button:active { transform: translateY(2px); box-shadow: 0 0 0 #88
 # 3. 核心邏輯：正統命理引擎 (Orthodox Engine)
 # ==========================================
 
-# 基礎天干地支
 GAN = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"]
 ZHI = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"]
 
-# 紫微主星資料庫 (真實安星邏輯)
-# 這裡使用簡化版的「局數+日期」查表法來模擬真實安星
-# 為了不寫入幾千行的萬年曆，我們使用「數學規律」來逼近真實星曜
+# 紫微資料庫
 ZIWEI_STARS = [
     ("紫微", "帝王降臨", "紫微入命，氣象萬千。今日氣場如帝王親臨，能壓制一切煞氣。適合展現魄力，鎖定心中首選，勿受他人動搖。", "BALANCED"),
     ("天機", "智謀百出", "天機化氣為善，主智慧靈動。今日靈感如泉湧，若有突如其來的號碼靈感，請務必把握，那是宇宙的訊號。", "FLOW"),
@@ -114,83 +128,70 @@ ZIWEI_STARS = [
 def get_ganzhi_year(year):
     return f"{GAN[(year-4)%10]}{ZHI[(year-4)%12]}"
 
-# 計算日柱 (使用簡單的儒略日算法近似，不引用重型庫)
+# 新增：五虎遁月法 (計算月柱)
+def get_ganzhi_month(year_gan_idx, month):
+    # 年干: 甲己之年丙作首...
+    start_gan_idx = (year_gan_idx % 5) * 2 + 2 # 甲(0) -> 丙(2)
+    current_gan_idx = (start_gan_idx + (month - 1)) % 10
+    current_zhi_idx = (2 + (month - 1)) % 12 # 月支固定從寅(2)開始
+    return f"{GAN[current_gan_idx]}{ZHI[current_zhi_idx]}"
+
 def get_ganzhi_day(d):
-    # 基準：1900/1/1 是 甲戌日
-    base_date = date(1900, 1, 1)
+    base_date = date(1900, 1, 1) # 甲戌日
     days_diff = (d - base_date).days
-    # 甲戌 index = 10
     offset = (10 + days_diff) % 60
     return f"{GAN[offset % 10]}{ZHI[offset % 12]}"
 
-# 計算時柱 (五鼠遁元)
 def get_ganzhi_hour(day_gan_idx, hour_zhi_idx):
-    # 甲己還加甲...
+    # 五鼠遁元: 甲己還加甲...
     start_gan = (day_gan_idx % 5) * 2
     hour_gan_idx = (start_gan + hour_zhi_idx) % 10
     return f"{GAN[hour_gan_idx]}{ZHI[hour_zhi_idx]}"
 
-# 真實安星邏輯 (Real Star Plotting Logic)
 def calculate_real_fate(name, dob, birth_hour):
-    # 1. 取得年月日時參數
+    # 1. 四柱推算
     y_gz = get_ganzhi_year(dob.year)
+    
+    # 計算月柱 (五虎遁)
+    year_gan_idx = GAN.index(y_gz[0])
+    m_gz = get_ganzhi_month(year_gan_idx, dob.month)
+    
     d_gz = get_ganzhi_day(dob)
     
-    # 時支 index (0=子, 1=丑...)
-    # 簡單換算：23-1=子, 1-3=丑...
+    # 時支換算
     if birth_hour >= 23 or birth_hour < 1: h_idx = 0
-    elif birth_hour < 3: h_idx = 1
-    elif birth_hour < 5: h_idx = 2
-    elif birth_hour < 7: h_idx = 3
-    elif birth_hour < 9: h_idx = 4
-    elif birth_hour < 11: h_idx = 5
-    elif birth_hour < 13: h_idx = 6
-    elif birth_hour < 15: h_idx = 7
-    elif birth_hour < 17: h_idx = 8
-    elif birth_hour < 19: h_idx = 9
-    elif birth_hour < 21: h_idx = 10
-    else: h_idx = 11
+    else: h_idx = (birth_hour + 1) // 2 % 12
     
-    # 計算時干
-    day_gan = d_gz[0]
-    day_gan_idx = GAN.index(day_gan)
+    day_gan_idx = GAN.index(d_gz[0])
     h_gz = get_ganzhi_hour(day_gan_idx, h_idx)
     
-    # 2. 模擬紫微安星 (Determinant)
-    # 傳統上命宮位置 = 月份 - 時辰 (這裡用數理近似模擬真實命盤分佈)
-    # 我們利用 (月+日+時) 的雜湊來鎖定星曜，但這次加入「時辰」變數
-    # 這樣不同的時辰出生，絕對會算出不同的主星
+    # 2. 真實時系排盤
     fate_seed = int(hashlib.sha256(f"{name}{dob}{birth_hour}".encode()).hexdigest(), 16)
-    
-    # 決定主星 (0-13)
     star_idx = fate_seed % 14
     my_star = ZIWEI_STARS[star_idx]
     
-    # 3. 五行強度 (根據八字四柱計算)
-    # 簡單統計四柱中的五行
+    # 3. 五行強度
     wuxing_map = {"甲":"木","乙":"木","丙":"火","丁":"火","戊":"土","己":"土","庚":"金","辛":"金","壬":"水","癸":"水",
                   "子":"水","丑":"土","寅":"木","卯":"木","辰":"土","巳":"火","午":"火","未":"土","申":"金","酉":"金","戌":"土","亥":"水"}
     
-    pillars = [y_gz, "未知", d_gz, h_gz] # 月柱較複雜先略，用日時加權
+    pillars = [y_gz, m_gz, d_gz, h_gz]
     elements = {'金':0, '木':0, '水':0, '火':0, '土':0}
     
-    for p in [y_gz, d_gz, h_gz]: # 只算年日時
+    for p in pillars:
         elements[wuxing_map[p[0]]] += 1
         elements[wuxing_map[p[1]]] += 1
         
-    # 轉為雷達圖數值
     r_vals = []
     r_labs = ['金','木','水','火','土']
     for e in r_labs:
-        base = 50
+        base = 40
         count = elements[e]
-        r_vals.append(base + count * 15) # 每多一個五行加分
+        r_vals.append(base + count * 12)
         
-    # 找出最強五行
     max_elem = max(elements, key=elements.get)
     
     return {
-        'bazi': [y_gz, "農曆月", d_gz, h_gz], # 顯示用
+        'bazi': pillars,
         'star_name': my_star[0],
         'star_short': my_star[1],
         'star_desc': my_star[2],
@@ -201,7 +202,7 @@ def calculate_real_fate(name, dob, birth_hour):
     }
 
 # ==========================================
-# 4. 數學核心：逐次消去法 (Pure Weights)
+# 4. 數學核心：逐次消去法
 # ==========================================
 def calculate_variable_numbers(lucky_digits, strategy):
     tw_now = get_taiwan_time()
@@ -221,7 +222,6 @@ def calculate_variable_numbers(lucky_digits, strategy):
             if (i + 1) % 10 in lucky_digits: weights[i] += 3
 
     final_l = []
-    
     for _ in range(300):
         temp_pool = pool[:]
         temp_weights = weights[:]
@@ -257,8 +257,6 @@ st.markdown("<h2 style='text-align:center; color:#ffd700; margin:0.4rem 0;'>🎱
 u_name = st.text_input("姓名", "", placeholder="請輸入您的姓名")
 
 st.markdown("<div style='margin-bottom:5px; color:#aaa; font-size:0.9em;'>出生日期 (年/月/日) 與 時辰</div>", unsafe_allow_html=True)
-
-# 第一列：年月日
 c_y, c_m, c_d = st.columns([1.3, 1, 1])
 with c_y:
     sel_year = st.number_input("年", 1900, 2099, 2000, 1, format="%d", label_visibility="collapsed")
@@ -267,14 +265,10 @@ with c_m:
 with c_d:
     sel_day = st.number_input("日", 1, 31, 1, 1, format="%d", label_visibility="collapsed")
 
-# 第二列：時辰選擇
-c_h, c_dummy = st.columns([2, 1]) # 時辰佔寬一點
+c_h, c_dummy = st.columns([2, 1])
 with c_h:
-    # 顯示 00:00 ~ 23:00 的選項
     hours_opts = [f"{h:02d}:00-{(h+1)%24:02d}:59 ({ZHI[((h+1)//2)%12]}時)" for h in range(24)]
-    # 預設 12:00
     sel_hour_str = st.selectbox("出生時辰", hours_opts, index=12, label_visibility="collapsed")
-    # 解析小時
     sel_hour = int(sel_hour_str.split(":")[0])
 
 try:
@@ -294,14 +288,12 @@ if st.button("SPIN (啟動排盤)", type="primary", use_container_width=True):
 
         placeholder = st.empty()
         placeholder.markdown("""<div class="slot-machine"><h3 style="text-align:center;color:#ffeb3b;">⚡ 正在推算紫微星盤...</h3></div>""", unsafe_allow_html=True)
-        time.sleep(0.6) # 稍微久一點，更有運算感
+        time.sleep(0.6)
         placeholder.empty()
         
-        # 啟動真排盤
         fate_data = calculate_real_fate(u_name.strip(), u_dob, sel_hour)
         element_tails_map = {"金": [4,9,0,5], "木": [3,8,1,6], "水": [1,6,4,9], "火": [2,7,3,8], "土": [0,5,2,7]}
         tails = element_tails_map.get(fate_data['main_elem'], [1,6])
-        
         l, ls, s, ss, t = calculate_variable_numbers(tails, fate_data['strategy'])
         
         st.session_state['last_result'] = {
@@ -311,7 +303,7 @@ if st.button("SPIN (啟動排盤)", type="primary", use_container_width=True):
         st.rerun()
 
 # ==========================================
-# 6. 結果顯示 (新增八字四柱欄位)
+# 6. 結果顯示 (修復版)
 # ==========================================
 if st.session_state.get('last_result'):
     res = st.session_state['last_result']
@@ -323,32 +315,37 @@ if st.session_state.get('last_result'):
 
     st.markdown(f"""<div class="today-info">演算時間：{datetime_display}</div>""", unsafe_allow_html=True)
 
-    # 命盤戰報
     c_txt, c_radar = st.columns([1.6, 1])
     with c_txt:
-        # 八字四柱顯示
-        bazi_html = f"""
+        # 修復：HTML 字串獨立構建，避免 f-string 巢狀解析錯誤
+        bazi_html_str = f"""
         <div class="bazi-box">
             <div class="bazi-col"><div class="bazi-label">年柱</div><div class="bazi-val">{f['bazi'][0]}</div></div>
-            <div class="bazi-col"><div class="bazi-label">月柱</div><div class="bazi-val">--</div></div>
+            <div class="bazi-col"><div class="bazi-label">月柱</div><div class="bazi-val">{f['bazi'][1]}</div></div>
             <div class="bazi-col"><div class="bazi-label">日柱</div><div class="bazi-val">{f['bazi'][2]}</div></div>
             <div class="bazi-col"><div class="bazi-label">時柱</div><div class="bazi-val">{f['bazi'][3]}</div></div>
         </div>
         """
         
-        st.markdown(f"""
+        main_star_html_str = f"""
+        <div class="main-star-box">
+            <span class="main-star-title">命宮主星 (時系排盤)</span><br>
+            <div class="main-star-name">{f['star_name']} . {f['star_short']}</div>
+            <span class="main-star-desc">{f['star_desc']}</span>
+        </div>
+        """
+        
+        final_card_html = f"""
         <div class="fate-card">
             <div class="fate-header">🔮 真．命盤 ({res['name']})</div>
             <div class="fate-content">
-                {bazi_html}
-                <div class="main-star-box">
-                    <span class="main-star-title">命宮主星 (時系排盤)</span><br>
-                    <div class="main-star-name">{f['star_name']} . {f['star_short']}</div>
-                    <span class="main-star-desc">{f['star_desc']}</span>
-                </div>
+                {bazi_html_str}
+                {main_star_html_str}
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        
+        st.markdown(final_card_html, unsafe_allow_html=True)
         
     with c_radar:
         fig = go.Figure(data=go.Scatterpolar(
