@@ -4,6 +4,7 @@ import hashlib
 from datetime import datetime, date, timedelta
 import time
 import plotly.graph_objects as go
+import calendar
 
 # ==========================================
 # 1. 系統核心配置
@@ -24,16 +25,22 @@ if 'last_result' not in st.session_state:
     st.session_state['last_result'] = None
 
 # ==========================================
-# 2. CSS 樣式表 (適配長文案)
+# 2. CSS 樣式表 (含底部警示)
 # ==========================================
 st.markdown("""
 <style>
 /* 全局黑金風格 */
 .stApp { background: #000; color: #eee; font-family: "Microsoft JhengHei", sans-serif; }
-.block-container { padding: 0.5rem 0.8rem 2.5rem !important; max-width: 520px !important; }
+.block-container { padding: 0.5rem 0.8rem 1rem !important; max-width: 520px !important; }
 
 /* 標題 */
 h2 { margin: 0.4rem 0 0.8rem !important; font-size: 1.6em !important; text-align: center; color: #ffd700; text-shadow: 0 0 10px #ff0000; }
+
+/* 輸入區塊優化 */
+div[data-testid="stHorizontalBlock"] { gap: 0.5rem; }
+div[data-baseweb="select"] > div { 
+    background-color: #111; border-color: #444; color: #eee; border-radius: 6px;
+}
 
 /* 日期時間 */
 .today-info {
@@ -41,7 +48,7 @@ h2 { margin: 0.4rem 0 0.8rem !important; font-size: 1.6em !important; text-align
     background: rgba(255,204,0,0.1); border-radius: 6px; letter-spacing: 1px; border: 1px solid #332200;
 }
 
-/* 命理戰報卡 - 擴充版 */
+/* 命理戰報卡 */
 .fate-card { 
     background: linear-gradient(180deg, #1a0505 0%, #000 100%);
     border: 1px solid #ff4444; border-radius: 10px; padding: 12px; margin: 0.5rem 0; 
@@ -58,7 +65,7 @@ h2 { margin: 0.4rem 0 0.8rem !important; font-size: 1.6em !important; text-align
 .main-star-desc { color: #ffddaa; font-size: 0.95em; font-style: normal; display: block; margin-top: 4px; border-top: 1px solid #444; padding-top: 4px;}
 
 /* 樂透區 */
-.slot-machine { background: #0a0a0a; border: 2px solid #ffd700; border-radius: 12px; padding: 10px; margin-top: 15px; }
+.slot-machine { background: #0a0a0a; border: 2px solid #ffd700; border-radius: 12px; padding: 10px; margin-top: 15px; margin-bottom: 20px;}
 .machine-title { font-size: 1.3em; margin: 0 0 8px; text-align: center; color: #ffeb3b; font-weight: bold; font-style: italic; }
 .reel-box { margin: 8px 0; padding: 8px 4px; border-radius: 8px; background: #000; border: 1px solid #333; }
 .reel-label { font-size: 0.8em; margin-bottom: 5px; text-align: center; color: #00e5ff; letter-spacing: 1px; }
@@ -73,10 +80,23 @@ h2 { margin: 0.4rem 0 0.8rem !important; font-size: 1.6em !important; text-align
 .ball.special { background: radial-gradient(circle at 30% 30%, #ff3333, #990000); color: white; border: 1px solid #ff8888; }
 .scratch-text { font-size: 1.8em; color: #ffd700; text-align: center; letter-spacing: 6px; margin-top: 4px; font-weight: 900; text-shadow: 0 0 8px #ff9900; }
 
-/* 手機適配 */
+/* 底部警示標語 */
+.disclaimer-box {
+    margin-top: 30px; padding-top: 15px; border-top: 1px solid #333;
+    text-align: center; color: #666; font-size: 0.75em; line-height: 1.5;
+}
+
+/* 按鈕 */
+div.stButton > button {
+    width: 100%; height: 50px; border-radius: 25px;
+    background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%);
+    border: 2px solid #ffd700; color: white; font-weight: bold; font-size: 1.2em;
+    box-shadow: 0 4px 0 #880000; margin-top: 10px;
+}
+div.stButton > button:active { transform: translateY(2px); box-shadow: 0 0 0 #880000; }
+
 @media (max-width: 480px) {
     .main-star-name { font-size: 1.3em; }
-    .main-star-desc { font-size: 0.9em; }
     .ball { width: 28px !important; height: 28px !important; font-size: 12px !important; }
 }
 
@@ -85,7 +105,7 @@ h2 { margin: 0.4rem 0 0.8rem !important; font-size: 1.6em !important; text-align
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. 核心邏輯 (大師敘事擴充版)
+# 3. 核心邏輯 (完整大師版)
 # ==========================================
 
 def get_element_by_year(year):
@@ -108,8 +128,7 @@ def calculate_fixed_fate(name, dob):
     zhi = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"]
     ganzhi = f"{gan[(dob.year-4)%10]}{zhi[(dob.year-4)%12]}"
     
-    # ✅ 關鍵更新：大師敘事資料庫 (Master Narrative DB)
-    # 結構: [星名, 短評, 長敘事(今日運勢), 隱形策略]
+    # 大師敘事資料庫 (含隱形策略)
     stars_db = [
         ("紫微", "帝王降臨", "紫微星入局，如帝王親臨。今日氣場強大，能壓制煞氣。適合展現魄力，鎖定心中首選，勿受他人動搖。", "BALANCED"),
         ("天機", "智謀百出", "天機星化氣為善，主智慧與靈動。今日靈感將如泉湧般出現，若有突如其來的號碼靈感，請務必把握，那是宇宙的訊號。", "FLOW"),
@@ -128,7 +147,6 @@ def calculate_fixed_fate(name, dob):
     ]
     my_star_data = stars_db[fate_seed % 14]
     
-    # ✅ 姓名靈動也擴充為長句
     name_analyses = [
         "格局外圓內方，決策果斷，今日具有強大的領袖磁場。", 
         "財庫飽滿之象，直覺敏銳，適合大膽佈局，捕捉稍縱即逝的機會。", 
@@ -148,14 +166,14 @@ def calculate_fixed_fate(name, dob):
     return {
         'ganzhi': ganzhi, 
         'star_name': my_star_data[0],
-        'star_short': my_star_data[1], # 短評
-        'star_desc': my_star_data[2],  # 長敘事
-        'strategy': my_star_data[3],   # 隱形策略
+        'star_short': my_star_data[1],
+        'star_desc': my_star_data[2],
+        'strategy': my_star_data[3],
         'name_res': name_res,
         'r_labs': elements, 'r_vals': r_vals, 'elem': elem_char
     }
 
-# --- B. 變數引擎 (保留隱形策略與生存協議) ---
+# 生存協議 + 策略注入
 def calculate_variable_numbers(lucky_digits, strategy):
     tw_now = get_taiwan_time()
     now_seed = int(hashlib.sha256(tw_now.strftime("%Y%m%d%H%M%S%f").encode()).hexdigest(), 16)
@@ -164,7 +182,6 @@ def calculate_variable_numbers(lucky_digits, strategy):
     pool = list(range(1, 50))
     weights = [1] * 49
     
-    # 策略注入
     if strategy == 'CONSERVATIVE':
         for i in range(14, 35): weights[i] += 2
     elif strategy == 'AGGRESSIVE':
@@ -180,7 +197,6 @@ def calculate_variable_numbers(lucky_digits, strategy):
         unique_draws = list(set(draws))
         if len(unique_draws) >= 6:
             temp = sorted(unique_draws[:6])
-            # 生存協議過濾
             if sum(1 for i in range(5) if temp[i+1] == temp[i]+1) > 2: continue
             if temp[-1] < 25 or temp[0] > 35: continue 
             final_l = temp
@@ -198,23 +214,43 @@ def calculate_variable_numbers(lucky_digits, strategy):
     return final_l, l_spec, s_main, s_spec, t_nums
 
 # ==========================================
-# 4. 介面流程
+# 4. 介面流程 (新版日期輸入)
 # ==========================================
 st.markdown("<h2 style='text-align:center; color:#ffd700; margin:0.4rem 0;'>🎱 Tino Lucky Ball</h2>", unsafe_allow_html=True)
 
-cols = st.columns([3,3])
-with cols[0]:
-    u_name = st.text_input("姓名", "", placeholder="請輸入姓名", label_visibility="collapsed")
-with cols[1]:
-    u_dob = st.date_input("生日", date(2000,1,1),
-                          min_value=date(1900,1,1), max_value=date(2030,12,31),
-                          label_visibility="collapsed")
+# 姓名輸入
+u_name = st.text_input("姓名", "", placeholder="請輸入您的姓名")
+
+# 日期三欄輸入
+st.markdown("<div style='margin-bottom:5px; color:#aaa; font-size:0.9em;'>出生日期</div>", unsafe_allow_html=True)
+c_y, c_m, c_d = st.columns([1.3, 1, 1])
+
+with c_y:
+    years = list(range(1930, 2041))
+    # 預設 2000 年 (index = 2000-1930 = 70)
+    sel_year = st.selectbox("年", years, index=70, label_visibility="collapsed")
+with c_m:
+    sel_month = st.selectbox("月", list(range(1, 13)), label_visibility="collapsed")
+with c_d:
+    sel_day = st.selectbox("日", list(range(1, 32)), label_visibility="collapsed")
+
+# 組合日期並防呆
+try:
+    u_dob = date(sel_year, sel_month, sel_day)
+except ValueError:
+    # 處理 2/30 這種無效日期，自動修正為該月最後一天
+    last_day = calendar.monthrange(sel_year, sel_month)[1]
+    u_dob = date(sel_year, sel_month, last_day)
 
 if st.button("SPIN (啟動演算)", type="primary", use_container_width=True):
     if not u_name.strip():
-        st.error("請輸入姓名")
+        st.error("請輸入姓名以啟動命盤運算")
     else:
-        # 動畫略
+        # 🛸 未來人彩蛋
+        if sel_year >= 2027:
+            st.toast(f"🛸 偵測到來自 {sel_year} 年的未來訊號！歡迎親臨 Tino Lucky Ball！", icon="👽")
+
+        # 動畫
         placeholder = st.empty()
         placeholder.markdown("""<div class="slot-machine"><h3 style="text-align:center;color:#ffeb3b;">⚡ 天機演算中...</h3></div>""", unsafe_allow_html=True)
         time.sleep(0.5)
@@ -232,7 +268,7 @@ if st.button("SPIN (啟動演算)", type="primary", use_container_width=True):
         st.rerun()
 
 # ==========================================
-# 5. 結果顯示 (大師敘事版)
+# 5. 結果顯示
 # ==========================================
 if st.session_state.get('last_result'):
     res = st.session_state['last_result']
@@ -244,9 +280,7 @@ if st.session_state.get('last_result'):
 
     st.markdown(f"""<div class="today-info">演算時間：{datetime_display}</div>""", unsafe_allow_html=True)
 
-    # 命理戰報區：左文右圖
     c_txt, c_radar = st.columns([1.6, 1])
-    
     with c_txt:
         st.markdown(f"""
         <div class="fate-card">
@@ -266,7 +300,6 @@ if st.session_state.get('last_result'):
         """, unsafe_allow_html=True)
         
     with c_radar:
-        # 雷達圖
         fig = go.Figure(data=go.Scatterpolar(
             r=f['r_vals'] + [f['r_vals'][0]],
             theta=f['r_labs'] + [f['r_labs'][0]],
@@ -295,3 +328,16 @@ if st.session_state.get('last_result'):
         <div class="reel-box"><div class="reel-label" style="color:#ffd700;">刮刮樂 SCRATCH</div><div class="scratch-text">{t_html}</div></div>
     </div>
     """, unsafe_allow_html=True)
+
+# ==========================================
+# 6. 底部警示標語 (Safe Harbor)
+# ==========================================
+st.markdown("""
+<div class="disclaimer-box">
+    ⚠️ <strong>免責聲明 (Disclaimer)</strong><br>
+    本程式之命理運算與號碼生成僅供 <strong>民俗學術研究</strong> 及 <strong>娛樂體驗</strong> 之用。<br>
+    所有的分析結果均基於機率與統計模型，<strong>不保證任何中獎機率</strong>。<br>
+    請使用者 <strong>量力而為，理性投注</strong>，切勿過度沉迷。<br>
+    本程式開發者不對任何投注盈虧負任何法律責任。
+</div>
+""", unsafe_allow_html=True)
