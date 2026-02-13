@@ -128,22 +128,20 @@ ZIWEI_STARS = [
 def get_ganzhi_year(year):
     return f"{GAN[(year-4)%10]}{ZHI[(year-4)%12]}"
 
-# 新增：五虎遁月法 (計算月柱)
+# 五虎遁月
 def get_ganzhi_month(year_gan_idx, month):
-    # 年干: 甲己之年丙作首...
-    start_gan_idx = (year_gan_idx % 5) * 2 + 2 # 甲(0) -> 丙(2)
+    start_gan_idx = (year_gan_idx % 5) * 2 + 2 
     current_gan_idx = (start_gan_idx + (month - 1)) % 10
-    current_zhi_idx = (2 + (month - 1)) % 12 # 月支固定從寅(2)開始
+    current_zhi_idx = (2 + (month - 1)) % 12 
     return f"{GAN[current_gan_idx]}{ZHI[current_zhi_idx]}"
 
 def get_ganzhi_day(d):
-    base_date = date(1900, 1, 1) # 甲戌日
+    base_date = date(1900, 1, 1) 
     days_diff = (d - base_date).days
     offset = (10 + days_diff) % 60
     return f"{GAN[offset % 10]}{ZHI[offset % 12]}"
 
 def get_ganzhi_hour(day_gan_idx, hour_zhi_idx):
-    # 五鼠遁元: 甲己還加甲...
     start_gan = (day_gan_idx % 5) * 2
     hour_gan_idx = (start_gan + hour_zhi_idx) % 10
     return f"{GAN[hour_gan_idx]}{ZHI[hour_zhi_idx]}"
@@ -151,14 +149,10 @@ def get_ganzhi_hour(day_gan_idx, hour_zhi_idx):
 def calculate_real_fate(name, dob, birth_hour):
     # 1. 四柱推算
     y_gz = get_ganzhi_year(dob.year)
-    
-    # 計算月柱 (五虎遁)
     year_gan_idx = GAN.index(y_gz[0])
     m_gz = get_ganzhi_month(year_gan_idx, dob.month)
-    
     d_gz = get_ganzhi_day(dob)
     
-    # 時支換算
     if birth_hour >= 23 or birth_hour < 1: h_idx = 0
     else: h_idx = (birth_hour + 1) // 2 % 12
     
@@ -303,7 +297,7 @@ if st.button("SPIN (啟動排盤)", type="primary", use_container_width=True):
         st.rerun()
 
 # ==========================================
-# 6. 結果顯示 (修復版)
+# 6. 結果顯示 (HTML 修復版)
 # ==========================================
 if st.session_state.get('last_result'):
     res = st.session_state['last_result']
@@ -317,35 +311,31 @@ if st.session_state.get('last_result'):
 
     c_txt, c_radar = st.columns([1.6, 1])
     with c_txt:
-        # 修復：HTML 字串獨立構建，避免 f-string 巢狀解析錯誤
-        bazi_html_str = f"""
-        <div class="bazi-box">
-            <div class="bazi-col"><div class="bazi-label">年柱</div><div class="bazi-val">{f['bazi'][0]}</div></div>
-            <div class="bazi-col"><div class="bazi-label">月柱</div><div class="bazi-val">{f['bazi'][1]}</div></div>
-            <div class="bazi-col"><div class="bazi-label">日柱</div><div class="bazi-val">{f['bazi'][2]}</div></div>
-            <div class="bazi-col"><div class="bazi-label">時柱</div><div class="bazi-val">{f['bazi'][3]}</div></div>
-        </div>
-        """
+        # 修復重點：HTML 字串完全平面化，移除所有巢狀縮排
+        # 這樣 st.markdown 才不會誤判為程式碼區塊
         
-        main_star_html_str = f"""
-        <div class="main-star-box">
-            <span class="main-star-title">命宮主星 (時系排盤)</span><br>
-            <div class="main-star-name">{f['star_name']} . {f['star_short']}</div>
-            <span class="main-star-desc">{f['star_desc']}</span>
-        </div>
-        """
-        
-        final_card_html = f"""
-        <div class="fate-card">
-            <div class="fate-header">🔮 真．命盤 ({res['name']})</div>
-            <div class="fate-content">
-                {bazi_html_str}
-                {main_star_html_str}
-            </div>
-        </div>
-        """
-        
-        st.markdown(final_card_html, unsafe_allow_html=True)
+        bazi_html = f"""<div class="bazi-box">
+<div class="bazi-col"><div class="bazi-label">年柱</div><div class="bazi-val">{f['bazi'][0]}</div></div>
+<div class="bazi-col"><div class="bazi-label">月柱</div><div class="bazi-val">{f['bazi'][1]}</div></div>
+<div class="bazi-col"><div class="bazi-label">日柱</div><div class="bazi-val">{f['bazi'][2]}</div></div>
+<div class="bazi-col"><div class="bazi-label">時柱</div><div class="bazi-val">{f['bazi'][3]}</div></div>
+</div>"""
+
+        star_html = f"""<div class="main-star-box">
+<span class="main-star-title">命宮主星 (時系排盤)</span><br>
+<div class="main-star-name">{f['star_name']} . {f['star_short']}</div>
+<span class="main-star-desc">{f['star_desc']}</span>
+</div>"""
+
+        full_html = f"""<div class="fate-card">
+<div class="fate-header">🔮 真．命盤 ({res['name']})</div>
+<div class="fate-content">
+{bazi_html}
+{star_html}
+</div>
+</div>"""
+
+        st.markdown(full_html, unsafe_allow_html=True)
         
     with c_radar:
         fig = go.Figure(data=go.Scatterpolar(
