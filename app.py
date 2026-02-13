@@ -25,7 +25,7 @@ if 'last_result' not in st.session_state:
     st.session_state['last_result'] = None
 
 # ==========================================
-# 2. CSS 樣式表 (含底部警示)
+# 2. CSS 樣式表
 # ==========================================
 st.markdown("""
 <style>
@@ -109,7 +109,7 @@ div.stButton > button:active { transform: translateY(2px); box-shadow: 0 0 0 #88
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. 核心邏輯 (完整大師版)
+# 3. 核心邏輯 (V12.4 數學純淨版)
 # ==========================================
 
 def get_element_by_year(year):
@@ -177,15 +177,19 @@ def calculate_fixed_fate(name, dob):
         'r_labs': elements, 'r_vals': r_vals, 'elem': elem_char
     }
 
-# 生存協議 + 策略注入
+# ==========================================
+# 🎯 數學核心升級：逐次消去法 (Pure Weights)
+# ==========================================
 def calculate_variable_numbers(lucky_digits, strategy):
     tw_now = get_taiwan_time()
     now_seed = int(hashlib.sha256(tw_now.strftime("%Y%m%d%H%M%S%f").encode()).hexdigest(), 16)
     random.seed(now_seed)
     
+    # 1. 建立初始權重池
     pool = list(range(1, 50))
     weights = [1] * 49
     
+    # 2. 策略注入 (Strategy Injection)
     if strategy == 'CONSERVATIVE':
         for i in range(14, 35): weights[i] += 2
     elif strategy == 'AGGRESSIVE':
@@ -196,18 +200,39 @@ def calculate_variable_numbers(lucky_digits, strategy):
             if (i + 1) % 10 in lucky_digits: weights[i] += 3
 
     final_l = []
-    for _ in range(300):
-        draws = random.choices(pool, weights=weights, k=10)
-        unique_draws = list(set(draws))
-        if len(unique_draws) >= 6:
-            temp = sorted(unique_draws[:6])
-            if sum(1 for i in range(5) if temp[i+1] == temp[i]+1) > 2: continue
-            if temp[-1] < 25 or temp[0] > 35: continue 
-            final_l = temp
-            break
-            
-    if not final_l: final_l = sorted(random.sample(pool, 6))
     
+    # 3. 生存協議過濾迴圈 (Survival Protocol)
+    for _ in range(300):
+        # 🎯 數學純淨抽樣演算法 (Weighted Without Replacement)
+        # 模擬不放回抽樣：抽出一個 -> 從池中與權重表中移除 -> 再抽下一個
+        temp_pool = pool[:]
+        temp_weights = weights[:]
+        draws = []
+        
+        for _ in range(6):
+            # 依當前權重抽出一顆
+            pick = random.choices(temp_pool, weights=temp_weights, k=1)[0]
+            draws.append(pick)
+            
+            # 找到該號碼的索引，從臨時池與權重表中移除 (消去法)
+            idx = temp_pool.index(pick)
+            temp_pool.pop(idx)
+            temp_weights.pop(idx)
+        
+        temp_sorted = sorted(draws)
+
+        # 4. 過濾邏輯 (Filter)
+        # 必死連號 (3連號以上)
+        if sum(1 for i in range(5) if temp_sorted[i+1] == temp_sorted[i]+1) > 2: continue
+        # 極端分佈 (全小 or 全大)
+        if temp_sorted[-1] < 25 or temp_sorted[0] > 35: continue 
+        
+        final_l = temp_sorted
+        break
+            
+    if not final_l: final_l = sorted(random.sample(pool, 6)) # Fallback
+    
+    # 特別號與威力彩 (獨立事件，直接抽)
     l_spec = random.randint(1,49)
     while l_spec in final_l: l_spec = random.randint(1,49)
     
@@ -218,7 +243,7 @@ def calculate_variable_numbers(lucky_digits, strategy):
     return final_l, l_spec, s_main, s_spec, t_nums
 
 # ==========================================
-# 4. 介面流程 (新版：數字輸入框)
+# 4. 介面流程 (數字輸入框)
 # ==========================================
 st.markdown("<h2 style='text-align:center; color:#ffd700; margin:0.4rem 0;'>🎱 Tino Lucky Ball</h2>", unsafe_allow_html=True)
 
@@ -230,43 +255,36 @@ st.markdown("<div style='margin-bottom:5px; color:#aaa; font-size:0.9em;'>出生
 c_y, c_m, c_d = st.columns([1.3, 1, 1])
 
 with c_y:
-    # 年份：預設 2000，範圍 1900-2099
     sel_year = st.number_input("年", min_value=1900, max_value=2099, value=2000, step=1, label_visibility="collapsed")
 with c_m:
-    # 月份：預設 1，範圍 1-12
     sel_month = st.number_input("月", min_value=1, max_value=12, value=1, step=1, label_visibility="collapsed")
 with c_d:
-    # 日期：預設 1，範圍 1-31
     sel_day = st.number_input("日", min_value=1, max_value=31, value=1, step=1, label_visibility="collapsed")
 
 # 組合日期並防呆
 try:
-    # 轉成 int 以防萬一
     y, m, d = int(sel_year), int(sel_month), int(sel_day)
-    # 處理 2/30 這種無效日期，自動修正為該月最後一天
     last_day = calendar.monthrange(y, m)[1]
     if d > last_day: d = last_day
     u_dob = date(y, m, d)
 except:
-    u_dob = date(2000, 1, 1) # 極端防呆
+    u_dob = date(2000, 1, 1)
 
 if st.button("SPIN (啟動演算)", type="primary", use_container_width=True):
     if not u_name.strip():
         st.error("請輸入姓名以啟動命盤運算")
     else:
-        # 🛸 未來人彩蛋
         if sel_year >= 2027:
             st.toast(f"🛸 偵測到來自 {sel_year} 年的未來訊號！歡迎親臨 Tino Lucky Ball！", icon="👽")
 
-        # 動畫
         placeholder = st.empty()
         placeholder.markdown("""<div class="slot-machine"><h3 style="text-align:center;color:#ffeb3b;">⚡ 天機演算中...</h3></div>""", unsafe_allow_html=True)
         time.sleep(0.5)
         placeholder.empty()
         
-        # 演算
         fate_data = calculate_fixed_fate(u_name.strip(), u_dob)
         tails = element_tails.get(fate_data['elem'], [1,6])
+        # 傳入隱形策略，進行數學純淨演算
         l, ls, s, ss, t = calculate_variable_numbers(tails, fate_data['strategy'])
         
         st.session_state['last_result'] = {
@@ -323,7 +341,6 @@ if st.session_state.get('last_result'):
         )
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # 樂透機台
     l_html = "".join(f'<div class="ball">{n:02d}</div>' for n in res['l']) + f'<div class="ball special">{res["ls"]:02d}</div>'
     s_html = "".join(f'<div class="ball">{n:02d}</div>' for n in res['s']) + f'<div class="ball special">{res["ss"]:02d}</div>'
     t_html = f"{res['t'][0]}&nbsp;&nbsp;{res['t'][1]}&nbsp;&nbsp;{res['t'][2]}"
@@ -337,9 +354,6 @@ if st.session_state.get('last_result'):
     </div>
     """, unsafe_allow_html=True)
 
-# ==========================================
-# 6. 底部警示標語 (Safe Harbor)
-# ==========================================
 st.markdown("""
 <div class="disclaimer-box">
     ⚠️ <strong>免責聲明 (Disclaimer)</strong><br>
