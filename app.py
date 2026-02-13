@@ -36,10 +36,14 @@ st.markdown("""
 /* 標題 */
 h2 { margin: 0.4rem 0 0.8rem !important; font-size: 1.6em !important; text-align: center; color: #ffd700; text-shadow: 0 0 10px #ff0000; }
 
-/* 輸入區塊優化 */
+/* 輸入區塊優化 (數字輸入框) */
 div[data-testid="stHorizontalBlock"] { gap: 0.5rem; }
-div[data-baseweb="select"] > div { 
-    background-color: #111; border-color: #444; color: #eee; border-radius: 6px;
+input[type="number"] {
+    background-color: #111 !important; 
+    color: #eee !important; 
+    border: 1px solid #444 !important;
+    border-radius: 6px !important;
+    text-align: center !important;
 }
 
 /* 日期時間 */
@@ -128,7 +132,7 @@ def calculate_fixed_fate(name, dob):
     zhi = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"]
     ganzhi = f"{gan[(dob.year-4)%10]}{zhi[(dob.year-4)%12]}"
     
-    # 大師敘事資料庫 (含隱形策略)
+    # 大師敘事資料庫
     stars_db = [
         ("紫微", "帝王降臨", "紫微星入局，如帝王親臨。今日氣場強大，能壓制煞氣。適合展現魄力，鎖定心中首選，勿受他人動搖。", "BALANCED"),
         ("天機", "智謀百出", "天機星化氣為善，主智慧與靈動。今日靈感將如泉湧般出現，若有突如其來的號碼靈感，請務必把握，那是宇宙的訊號。", "FLOW"),
@@ -214,33 +218,37 @@ def calculate_variable_numbers(lucky_digits, strategy):
     return final_l, l_spec, s_main, s_spec, t_nums
 
 # ==========================================
-# 4. 介面流程 (新版日期輸入)
+# 4. 介面流程 (新版：數字輸入框)
 # ==========================================
 st.markdown("<h2 style='text-align:center; color:#ffd700; margin:0.4rem 0;'>🎱 Tino Lucky Ball</h2>", unsafe_allow_html=True)
 
 # 姓名輸入
 u_name = st.text_input("姓名", "", placeholder="請輸入您的姓名")
 
-# 日期三欄輸入
-st.markdown("<div style='margin-bottom:5px; color:#aaa; font-size:0.9em;'>出生日期</div>", unsafe_allow_html=True)
+# 日期三欄輸入 (數字框)
+st.markdown("<div style='margin-bottom:5px; color:#aaa; font-size:0.9em;'>出生日期 (年 / 月 / 日)</div>", unsafe_allow_html=True)
 c_y, c_m, c_d = st.columns([1.3, 1, 1])
 
 with c_y:
-    years = list(range(1930, 2041))
-    # 預設 2000 年 (index = 2000-1930 = 70)
-    sel_year = st.selectbox("年", years, index=70, label_visibility="collapsed")
+    # 年份：預設 2000，範圍 1900-2099
+    sel_year = st.number_input("年", min_value=1900, max_value=2099, value=2000, step=1, label_visibility="collapsed")
 with c_m:
-    sel_month = st.selectbox("月", list(range(1, 13)), label_visibility="collapsed")
+    # 月份：預設 1，範圍 1-12
+    sel_month = st.number_input("月", min_value=1, max_value=12, value=1, step=1, label_visibility="collapsed")
 with c_d:
-    sel_day = st.selectbox("日", list(range(1, 32)), label_visibility="collapsed")
+    # 日期：預設 1，範圍 1-31
+    sel_day = st.number_input("日", min_value=1, max_value=31, value=1, step=1, label_visibility="collapsed")
 
 # 組合日期並防呆
 try:
-    u_dob = date(sel_year, sel_month, sel_day)
-except ValueError:
+    # 轉成 int 以防萬一
+    y, m, d = int(sel_year), int(sel_month), int(sel_day)
     # 處理 2/30 這種無效日期，自動修正為該月最後一天
-    last_day = calendar.monthrange(sel_year, sel_month)[1]
-    u_dob = date(sel_year, sel_month, last_day)
+    last_day = calendar.monthrange(y, m)[1]
+    if d > last_day: d = last_day
+    u_dob = date(y, m, d)
+except:
+    u_dob = date(2000, 1, 1) # 極端防呆
 
 if st.button("SPIN (啟動演算)", type="primary", use_container_width=True):
     if not u_name.strip():
